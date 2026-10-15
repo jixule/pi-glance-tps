@@ -9,6 +9,7 @@ import { richInputSurfaceState, stripAnsi } from "../support/surface-test-harnes
 
 interface TestTerminal extends Terminal {
 	readonly writes: string[];
+	setProgramStatus(): void;
 }
 
 function createTerminal(columns = 120, rows = 24): TestTerminal {
@@ -30,6 +31,7 @@ function createTerminal(columns = 120, rows = 24): TestTerminal {
 		clearScreen: () => undefined,
 		setTitle: () => undefined,
 		setProgress: () => undefined,
+		setProgramStatus: () => undefined,
 	};
 }
 

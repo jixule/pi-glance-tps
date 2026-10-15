@@ -28,6 +28,7 @@ export interface RuntimeRefreshContextHarness {
 	ctx: ExtensionContext;
 	getEntryReads(): number;
 	getBranchReads(): number;
+	getContextReads(): number;
 	setCwd(cwd: string): void;
 	setEntries(entries: readonly StateSessionEntry[]): void;
 	setContextUsage(contextUsage: MutableContextUsage | undefined): void;
@@ -95,6 +96,7 @@ export function createRuntimeRefreshContext(options: RuntimeRefreshContextOption
 	let branch = options.branch ?? [];
 	let entryReads = 0;
 	let branchReads = 0;
+	let contextReads = 0;
 
 	const ctx = {
 		get cwd() {
@@ -106,7 +108,7 @@ export function createRuntimeRefreshContext(options: RuntimeRefreshContextOption
 		modelRegistry: {
 			getAvailable: () => availableProviders.map((provider, index) => ({ provider, id: `${provider}-model-${index}` })),
 		},
-		getContextUsage: () => contextUsage,
+		getContextUsage: () => { contextReads++; return contextUsage; },
 		sessionManager: {
 			getCwd: () => cwd,
 			getLeafId: () => {
@@ -129,6 +131,7 @@ export function createRuntimeRefreshContext(options: RuntimeRefreshContextOption
 		ctx,
 		getEntryReads: () => entryReads,
 		getBranchReads: () => branchReads,
+		getContextReads: () => contextReads,
 		setCwd: (nextCwd) => {
 			cwd = nextCwd;
 		},

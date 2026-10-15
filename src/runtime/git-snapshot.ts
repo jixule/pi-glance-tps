@@ -1,5 +1,28 @@
 import type { GitSnapshot, GitStatus } from "../types.js";
 
+/** Compare visible facts, excluding collection timestamps. */
+export function gitSnapshotsEqual(a: GitSnapshot, b: GitSnapshot): boolean {
+	return (
+		a.repo === b.repo &&
+		a.branch === b.branch &&
+		a.detached === b.detached &&
+		a.sha === b.sha &&
+		a.upstream === b.upstream &&
+		a.ahead === b.ahead &&
+		a.behind === b.behind &&
+		a.staged === b.staged &&
+		a.unstaged === b.unstaged &&
+		a.untracked === b.untracked &&
+		a.conflicts === b.conflicts &&
+		a.dirty === b.dirty &&
+		a.status === b.status &&
+		a.stale === b.stale &&
+		a.summary?.files === b.summary?.files &&
+		a.summary?.additions === b.summary?.additions &&
+		a.summary?.deletions === b.summary?.deletions
+	);
+}
+
 interface GitCounts {
 	staged: number;
 	unstaged: number;

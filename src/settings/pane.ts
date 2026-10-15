@@ -27,7 +27,7 @@ import { shortcutConflict } from "../input/keybinding.js";
 import { normalizeStashShortcut, shortcutLabel } from "../input/shortcut.js";
 import { SETTINGS_SECTIONS } from "./catalog.js";
 import { ActivityClock, activityMotion, type ScheduleActivityFrame } from "../runtime/activity-animation.js";
-import { extensionStatusEntries, EXTENSION_STATUS_RESET } from "../surface/extension-statuses.js";
+import { ExtensionStatusCache, EXTENSION_STATUS_RESET } from "../surface/extension-statuses.js";
 import { truncateStyledText } from "../surface/text.js";
 import { createInputSurfaceRenderer } from "../surface/renderer.js";
 import type { GlanceRenderStyleContext } from "../theme/adapter.js";
@@ -80,6 +80,7 @@ export class GlanceConfigPane implements Component, Focusable {
 	private model: PaneModelState;
 	private view: GlancePaneViewModel;
 	private readonly renderSurface: ReturnType<typeof createInputSurfaceRenderer>;
+	private readonly extensionStatuses = new ExtensionStatusCache();
 	private previewVisible = true;
 	private readonly clock: ActivityClock;
 	private input = new Input();
@@ -188,7 +189,7 @@ export class GlanceConfigPane implements Component, Focusable {
 	private dispatch(intent: PaneIntent): void {
 		const wasNumber = this.model.page.kind === "number";
 		const statusCount = intent.type === "move" && this.view.extensionStatusIndex !== undefined
-			? extensionStatusEntries(this.options.getExtensionStatuses?.()).length : 0;
+			? this.extensionStatuses.read(this.options.getExtensionStatuses?.()).length : 0;
 		const result = updatePaneModel(this.model, intent, statusCount);
 		this.model = result.model;
 		this.view = createPaneViewModel(this.model);
@@ -362,7 +363,7 @@ export class GlanceConfigPane implements Component, Focusable {
 		let preview = this.renderPreview(view, previewWidth, statusSource);
 		const title = this.fg("muted", view.title);
 		const base = header.length + 1 + 1 + HINT_ROWS + SHORTCUT_ROWS;
-		const details = view.extensionStatusIndex === undefined ? undefined : extensionStatusEntries(statusSource);
+		const details = view.extensionStatusIndex === undefined ? undefined : this.extensionStatuses.read(statusSource);
 		const showPreview = height - base - preview.length >= 4;
 		if (showPreview !== this.previewVisible) {
 			this.previewVisible = showPreview;

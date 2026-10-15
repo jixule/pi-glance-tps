@@ -4,7 +4,28 @@ import { cloneConfig, defaultConfig } from "../../src/config/model.js";
 import { GlanceLineRenderer, renderGlanceLine } from "../../src/surface/status-line.js";
 import { createInputSurfaceRenderer, renderInputSurface } from "../../src/surface/renderer.js";
 import { resolveBuiltInGlanceStyles } from "../../src/theme/adapter.js";
+import { ExtensionStatusCache } from "../../src/surface/extension-statuses.js";
 import { richInputSurfaceState } from "../support/surface-test-harness.js";
+
+test("external status snapshots are reused until keys or raw values change", () => {
+	const cache = new ExtensionStatusCache();
+	const statuses = new Map([["z", " Ready\t "], ["a", "\x1b[31mQuota\x1b[0m"]]);
+	const initial = cache.read(statuses);
+	assert.deepEqual(initial.map(entry => entry.key), ["a", "z"]);
+	assert.equal(initial[1]!.text, "Ready");
+	assert.strictEqual(cache.read(statuses), initial, "unchanged values reuse the normalized snapshot");
+	assert.strictEqual(cache.read(new Map(statuses)), initial, "a fresh Map with the same contents reuses the snapshot");
+
+	statuses.set("a", "\x1b[32mQuota\x1b[0m");
+	const updated = cache.read(statuses);
+	assert.notStrictEqual(updated, initial);
+	assert.ok(updated[0]!.text.includes("\x1b[32m"));
+	assert.ok(initial[0]!.text.includes("\x1b[31m"), "a retained snapshot is independent of later publisher changes");
+	statuses.delete("a"); statuses.set("worker", "Busy");
+	assert.deepEqual(cache.read(statuses).map(entry => entry.key), ["worker", "z"], "same-size key replacement is visible");
+	assert.deepEqual(cache.read(undefined), []);
+	assert.strictEqual(cache.read(new Map()), cache.read(undefined));
+});
 
 test("status cache skips collection until a render input changes", () => {
 	let reads = 0;

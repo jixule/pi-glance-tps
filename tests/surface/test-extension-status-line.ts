@@ -53,6 +53,16 @@ test("the cached line observes in-place status text, ANSI, deletion and visibili
 	assert.equal(state.version, version);
 });
 
+test("cached external ordering matches uncached rendering for equivalent Unicode keys", () => {
+	const config = defaultConfig(); config.segments = [{ id: "extensions", enabled: true }];
+	const state = testState(), renderer = new GlanceLineRenderer();
+	let statuses = new Map([["é", "FIRST"], ["e\u0301", "SECOND"]]);
+	const render = () => renderer.render(state, config, 80, 1, { extensionStatuses: statuses });
+	render();
+	statuses = new Map([...statuses].reverse());
+	assert.equal(render(), renderGlanceLine(state, config, 80, 1, { extensionStatuses: statuses }), "stable collation ties retain the publisher's current order");
+});
+
 test("single-line normalization ignores empty statuses and preserves Unicode, ANSI and style boundaries", () => {
 	const config = defaultConfig(); config.icons = "plain";
 	config.segments = [{ id: "extensions", enabled: true }, { id: "model", enabled: true }];

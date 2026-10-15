@@ -1,5 +1,5 @@
 import type { ExtensionContext, MessageEndEvent, SessionCompactEvent } from "@earendil-works/pi-coding-agent";
-import { lifecycleInputsFromContext, thinkingInputsFromContext, usageTotalsFromEntries, usageTotalsFromEntry, usageTotalsFromMessage, type StateInputs, type StateLifecycleInputs, type StateMessageInputs, type StateSessionEntry } from "./snapshot.js";
+import { contextUsageInputsFromContext, lifecycleInputsFromContext, thinkingInputsFromContext, usageTotalsFromEntries, usageTotalsFromEntry, usageTotalsFromMessage, type StateContextUsageInputs, type StateInputs, type StateLifecycleInputs, type StateMessageInputs, type StateSessionEntry } from "./snapshot.js";
 import {
 	addUsageTotals,
 	clearCurrentRunModelSpeed,
@@ -62,6 +62,7 @@ interface RefreshPlan {
 }
 
 interface RefreshOptions {
+	forceContext?: boolean;
 	beforeRender?: () => boolean | void;
 }
 
@@ -157,6 +158,15 @@ function applyModelSpeedIntent(state: GlanceState, intent: ModelSpeedStateIntent
 
 export class RuntimeRefreshSession {
 	private state?: GlanceState;
+	private contextSnapshot?: {
+		manager: ExtensionContext["sessionManager"];
+		leafId: string;
+		model: ExtensionContext["model"];
+		modelId: string | undefined;
+		provider: string | undefined;
+		window: number | undefined;
+		usage: StateContextUsageInputs | undefined;
+	};
 	private appliedUsageObjects = new WeakSet<object>();
 	private appliedUsageKeys = new Set<string>();
 	private seenEntryIds = new Set<string>();
@@ -166,6 +176,19 @@ export class RuntimeRefreshSession {
 
 	getState(): GlanceState | undefined {
 		return this.state;
+	}
+
+	/** Reuse only within a stable persisted position and selected model. */
+	private readContextUsage(ctx: ExtensionContext, force = false): StateContextUsageInputs | undefined {
+		const manager = ctx.sessionManager, leafId = manager.getLeafId(), model = ctx.model;
+		const previous = this.contextSnapshot;
+		if (!force && leafId && previous?.manager === manager && previous.leafId === leafId
+			&& previous.model === model && previous.modelId === model?.id
+			&& previous.provider === model?.provider && previous.window === model?.contextWindow) return previous.usage;
+		const usage = contextUsageInputsFromContext(ctx);
+		this.contextSnapshot = leafId ? { manager, leafId, model, modelId: model?.id,
+			provider: model?.provider, window: model?.contextWindow, usage } : undefined;
+		return usage;
 	}
 
 	private readStateInputs(ctx: ExtensionContext): StateInputs {
@@ -181,12 +204,13 @@ export class RuntimeRefreshSession {
 			}
 		}
 		return {
-			...lifecycleInputsFromContext(ctx, this.host.getThinkingLevel()),
+			...lifecycleInputsFromContext(ctx, this.host.getThinkingLevel(), () => this.readContextUsage(ctx, true)),
 			usage: usageTotalsFromEntries(entries),
 		};
 	}
 
 	private resetAccumulators(): void {
+		this.contextSnapshot = undefined;
 		this.seenEntryIds.clear();
 		this.appliedUsageObjects = new WeakSet<object>();
 		this.appliedUsageKeys = new Set<string>();
@@ -279,7 +303,7 @@ export class RuntimeRefreshSession {
 		return changed;
 	}
 
-	private applyRefreshPlan(ctx: ExtensionContext, plan: RefreshPlan): boolean {
+	private applyRefreshPlan(ctx: ExtensionContext, plan: RefreshPlan, forceContext = false): boolean {
 		if (!this.state || plan.snapshot === "none") return false;
 		const config = this.host.getConfig();
 
@@ -295,7 +319,7 @@ export class RuntimeRefreshSession {
 			return this.applyLifecycleSnapshot(inputs, plan, inputs.usage);
 		}
 
-		return this.applyLifecycleSnapshot(lifecycleInputsFromContext(ctx, this.host.getThinkingLevel()), plan);
+		return this.applyLifecycleSnapshot(lifecycleInputsFromContext(ctx, this.host.getThinkingLevel(), () => this.readContextUsage(ctx, forceContext)), plan);
 	}
 
 	private async refresh(ctx: ExtensionContext, plan: RefreshPlan, options: RefreshOptions = {}): Promise<void> {
@@ -305,16 +329,17 @@ export class RuntimeRefreshSession {
 			this.ensureState(ctx);
 			changed = true;
 		}
-		changed = this.applyRefreshPlan(ctx, plan) || changed;
+		changed = this.applyRefreshPlan(ctx, plan, options.forceContext) || changed;
 		changed = options.beforeRender?.() === true || changed;
 		if (plan.render === "always" || (plan.render === "changed" && changed)) this.host.requestRender();
 	}
 
 	async modelSelect(ctx: ExtensionContext): Promise<void> {
-		await this.refresh(ctx, LIFECYCLE_MODEL_IMMEDIATE);
+		await this.refresh(ctx, LIFECYCLE_MODEL_IMMEDIATE, { forceContext: true });
 	}
 
 	async thinkingLevelSelect(ctx: ExtensionContext): Promise<void> {
+		this.contextSnapshot = undefined;
 		await this.refresh(ctx, THINKING_LEVEL_SELECT);
 	}
 
@@ -358,6 +383,7 @@ export class RuntimeRefreshSession {
 				? USAGE_MESSAGE_END
 				: ENSURE_ONLY;
 		await this.refresh(ctx, plan, {
+			forceContext: message.role === "assistant",
 			beforeRender: () => {
 				let changed = false;
 				if (hadState) changed = this.applyUsageDelta(message, delta, this.messageUsageKey(message)) || changed;
@@ -373,6 +399,7 @@ export class RuntimeRefreshSession {
 		const delta = usageTotalsFromEntry(entry);
 		const modelSpeedIntent = this.modelSpeedTracker.compactionRetry(event.willRetry === true);
 		await this.refresh(ctx, LIFECYCLE_MODEL_IMMEDIATE, {
+			forceContext: true,
 			beforeRender: () => {
 				let changed = false;
 				if (hadState) changed = this.applyUsageDelta(entry, delta, this.entryUsageKey(entry)) || changed;
@@ -387,6 +414,7 @@ export class RuntimeRefreshSession {
 	}
 
 	agentStart(): void {
+		this.contextSnapshot = undefined;
 		const intent = this.modelSpeedTracker.start();
 		if (this.state && applyModelSpeedIntent(this.state, intent)) this.host.requestRender();
 	}
@@ -399,7 +427,7 @@ export class RuntimeRefreshSession {
 		const intent = this.modelSpeedTracker.settle();
 		if (!this.state) return;
 		let changed = this.syncPersistedUsage(ctx);
-		changed = refreshContextUsage(this.state, { contextUsage: ctx.getContextUsage() ?? undefined, model: ctx.model }) || changed;
+		changed = refreshContextUsage(this.state, { contextUsage: this.readContextUsage(ctx, true), model: ctx.model }) || changed;
 		changed = applyModelSpeedIntent(this.state, intent) || changed;
 		if (changed) this.host.requestRender();
 	}

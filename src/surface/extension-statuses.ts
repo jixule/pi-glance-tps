@@ -27,6 +27,28 @@ export function extensionStatusEntries(statuses?: ReadonlyMap<string, string>): 
 	return entries;
 }
 
+/** One owned snapshot; callers may keep a result while Pi mutates its live Map. */
+export class ExtensionStatusCache {
+	private raw = new Map<string, string>();
+	private entries: ReturnType<typeof extensionStatusEntries> = [];
+
+	read(statuses?: ReadonlyMap<string, string>): Readonly<ReturnType<typeof extensionStatusEntries>> {
+		let unchanged = this.raw.size === (statuses?.size ?? 0);
+		if (unchanged) {
+			// Stable locale collation can tie distinct Unicode keys, so order matters.
+			const keys = statuses?.keys();
+			for (const [key, value] of this.raw) {
+				if (keys?.next().value !== key || statuses?.get(key) !== value) { unchanged = false; break; }
+			}
+		}
+		if (!unchanged) {
+			this.raw = new Map(statuses);
+			this.entries = extensionStatusEntries(this.raw);
+		}
+		return this.entries;
+	}
+}
+
 export function extensionStatusTexts(statuses?: ReadonlyMap<string, string>): string[] {
 	return extensionStatusEntries(statuses).map(entry => entry.text);
 }

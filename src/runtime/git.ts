@@ -1,11 +1,12 @@
 import { runGit } from "./git-command.js";
 import { GitRemoteRefresh } from "./git-remote.js";
-import { emptyGitSnapshot, parseGitDiffStat, parseGitStatus } from "./git-snapshot.js";
+import { emptyGitSnapshot, gitSnapshotsEqual, parseGitDiffStat, parseGitStatus } from "./git-snapshot.js";
 import type { GitConfig, GitSnapshot } from "../types.js";
 
 const GIT_ARGS = ["status", "--porcelain=v2", "--branch", "-z"] as const;
 const DEFAULT_POLL_INTERVAL_MS = 5000;
 const MIN_POLL_INTERVAL_MS = 1000;
+const MAX_IDLE_POLL_INTERVAL_MS = 30_000;
 const NO_REPO_RETRY_MS = 30_000;
 
 export async function collectGitSnapshot(cwd: string, config: GitConfig, signal?: AbortSignal): Promise<GitSnapshot> {
@@ -61,6 +62,7 @@ export class GitRefresher {
 	private active?: AbortController;
 	private remote?: GitRemoteRefresh;
 	private lastGood?: { cwd: string; snapshot: GitSnapshot };
+	private idlePollDelay = 0;
 	private readonly canFetch: () => boolean;
 	private readonly collect: NonNullable<GitRefresherOptions["collect"]>;
 	private readonly setTimer: (callback: () => void, delay: number) => NodeJS.Timeout;
@@ -85,6 +87,7 @@ export class GitRefresher {
 
 	schedule(immediate = false): void {
 		if (this.disposed) return;
+		this.idlePollDelay = 0;
 		if (!this.getConfig().autoFetch || !this.canFetch()) {
 			this.remote?.dispose();
 			this.remote = undefined;
@@ -136,6 +139,12 @@ export class GitRefresher {
 			} catch {
 				snapshot = { ...emptyGitSnapshot(), stale: true };
 			}
+			const baseDelay = nextGitRefreshDelay(snapshot, this.getConfig());
+			const unchanged = this.lastGood?.cwd === cwd && gitSnapshotsEqual(this.lastGood.snapshot, snapshot);
+			this.idlePollDelay = !snapshot.repo || snapshot.stale ? 0
+				: unchanged && this.idlePollDelay > 0
+					? Math.min(Math.max(baseDelay, this.idlePollDelay) * 2, Math.max(baseDelay, MAX_IDLE_POLL_INTERVAL_MS))
+					: baseDelay;
 			if (snapshot.stale && this.lastGood?.cwd === cwd) snapshot = { ...this.lastGood.snapshot, stale: true };
 			else if (snapshot.repo) this.lastGood = { cwd, snapshot };
 			else this.lastGood = undefined;
@@ -152,11 +161,12 @@ export class GitRefresher {
 			if (this.disposed) return;
 			if (this.pending) {
 				this.pending = false;
+				this.idlePollDelay = 0;
 				const delay = this.pendingImmediate ? 0 : this.getConfig().refreshDebounceMs;
 				this.pendingImmediate = false;
 				this.scheduleAfter(delay);
 			} else if (snapshot) {
-				this.scheduleAfter(nextGitRefreshDelay(snapshot, this.getConfig()));
+				this.scheduleAfter(this.idlePollDelay || nextGitRefreshDelay(snapshot, this.getConfig()));
 			}
 		}
 	}

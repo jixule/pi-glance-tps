@@ -129,7 +129,7 @@ function modelInputsFromContext(ctx: ExtensionContext): StateModelInputs | undef
 	};
 }
 
-function contextUsageInputsFromContext(ctx: ExtensionContext): StateContextUsageInputs | undefined {
+export function contextUsageInputsFromContext(ctx: ExtensionContext): StateContextUsageInputs | undefined {
 	const contextUsage = ctx.getContextUsage();
 	return contextUsage
 		? {
@@ -148,11 +148,15 @@ export function thinkingInputsFromContext(ctx: ExtensionContext, thinkingLevel: 
 	};
 }
 
-export function lifecycleInputsFromContext(ctx: ExtensionContext, thinkingLevel: string): StateLifecycleInputs {
+export function lifecycleInputsFromContext(
+	ctx: ExtensionContext,
+	thinkingLevel: string,
+	readContextUsage: () => StateContextUsageInputs | undefined = () => contextUsageInputsFromContext(ctx),
+): StateLifecycleInputs {
 	return {
 		cwd: ctx.sessionManager.getCwd() || ctx.cwd,
 		...thinkingInputsFromContext(ctx, thinkingLevel),
-		contextUsage: contextUsageInputsFromContext(ctx),
+		contextUsage: readContextUsage(),
 	};
 }
 

@@ -1,5 +1,5 @@
 import { truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
-import { extensionStatusTexts, fitExtensionStatuses } from "./extension-statuses.js";
+import { ExtensionStatusCache, extensionStatusTexts, fitExtensionStatuses } from "./extension-statuses.js";
 import { ICONS } from "../theme/palette.js";
 import { SEGMENT_BY_ID } from "../segments/registry.js";
 import { renderSegment } from "../segments/render.js";
@@ -108,9 +108,9 @@ function fitSegments(styles: ResolvedGlanceStyles, segments: SegmentRenderResult
 	return fitted;
 }
 
-function readExtensionTexts(config: GlanceConfig, options: GlanceLineRenderOptions): readonly string[] {
+function enabledExtensionStatuses(config: GlanceConfig, options: GlanceLineRenderOptions): ReadonlyMap<string, string> | undefined {
 	return config.enabled && config.segments.some(s => s.id === "extensions" && s.enabled)
-		? extensionStatusTexts(options.extensionStatuses) : [];
+		? options.extensionStatuses : undefined;
 }
 
 function renderLine(
@@ -151,11 +151,12 @@ export function renderGlanceLine(
 	providerCount = state.providers.availableCount,
 	options: GlanceLineRenderOptions = {},
 ): string {
-	return renderLine(state, config, width, providerCount, options, readExtensionTexts(config, options));
+	return renderLine(state, config, width, providerCount, options, extensionStatusTexts(enabledExtensionStatuses(config, options)));
 }
 
 /** One entry per surface; compare live status contents rather than the Map's identity. */
 export class GlanceLineRenderer {
+	private readonly extensionStatuses = new ExtensionStatusCache();
 	private cached?: {
 		state: GlanceState;
 		version: number;
@@ -164,7 +165,7 @@ export class GlanceLineRenderer {
 		providerCount: number;
 		styleKey: string;
 		widthMode?: WidthMode;
-		extensionTexts: readonly string[];
+		extensionEntries: ReturnType<ExtensionStatusCache["read"]>;
 		text: string;
 	};
 
@@ -176,7 +177,7 @@ export class GlanceLineRenderer {
 		options: GlanceLineRenderOptions = {},
 	): string {
 		const styles = resolveGlanceRenderStyles(config.theme, options);
-		const extensionTexts = readExtensionTexts(config, options);
+		const extensionEntries = this.extensionStatuses.read(enabledExtensionStatuses(config, options));
 		const previous = this.cached;
 		if (
 			previous?.state === state &&
@@ -186,12 +187,11 @@ export class GlanceLineRenderer {
 			previous.providerCount === providerCount &&
 			previous.styleKey === styles.cacheKey &&
 			previous.widthMode === options.widthMode &&
-			previous.extensionTexts.length === extensionTexts.length &&
-			previous.extensionTexts.every((text, index) => text === extensionTexts[index])
+			previous.extensionEntries === extensionEntries
 		) {
 			return previous.text;
 		}
-		const text = renderLine(state, config, width, providerCount, { styles, widthMode: options.widthMode }, extensionTexts);
+		const text = renderLine(state, config, width, providerCount, { styles, widthMode: options.widthMode }, extensionEntries.map(entry => entry.text));
 		this.cached = {
 			state,
 			version: state.version,
@@ -200,7 +200,7 @@ export class GlanceLineRenderer {
 			providerCount,
 			styleKey: styles.cacheKey,
 			widthMode: options.widthMode,
-			extensionTexts,
+			extensionEntries,
 			text,
 		};
 		return text;
