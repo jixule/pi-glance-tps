@@ -38,19 +38,19 @@ test("config store diagnoses reads and atomically saves through an explicit path
 		await writeConfigText(configPath, "{");
 		assertLoadResult(
 			loadConfigSync(),
-			{ config: defaultConfig(), status: "invalid", writable: false, diagnostic: /invalid.*using defaults.*blocking saves/i },
+			{ config: defaultConfig(), status: "invalid", writable: false, diagnostic: /配置无效.*使用默认值.*禁止保存/ },
 			"invalid JSON sync load should be diagnosed",
 		);
 		assertLoadResult(
 			await loadConfig(),
-			{ config: defaultConfig(), status: "invalid", writable: false, diagnostic: /invalid.*using defaults.*blocking saves/i },
+			{ config: defaultConfig(), status: "invalid", writable: false, diagnostic: /配置无效.*使用默认值.*禁止保存/ },
 			"invalid JSON async load should be diagnosed",
 		);
 
 		await writeConfigText(configPath, "false");
 		assertLoadResult(
 			loadConfigSync(),
-			{ config: defaultConfig(), status: "invalid", writable: false, diagnostic: /must be a JSON object.*blocking saves/i },
+			{ config: defaultConfig(), status: "invalid", writable: false, diagnostic: /必须是 JSON 对象.*禁止保存/ },
 			"non-object config should be diagnosed instead of silently accepted",
 		);
 
@@ -66,12 +66,12 @@ test("config store diagnoses reads and atomically saves through an explicit path
 		const futureExpected = normalizeConfig(futureRaw);
 		assertLoadResult(
 			loadConfigSync(),
-			{ config: futureExpected, status: "future", writable: false, diagnostic: /version 99.*newer than supported version 15.*without overwriting/i },
+			{ config: futureExpected, status: "future", writable: false, diagnostic: /配置版本 99.*高于支持的版本 15.*不会覆盖/ },
 			"future sync config should load known fields read-only",
 		);
 		assertLoadResult(
 			await loadConfig(),
-			{ config: futureExpected, status: "future", writable: false, diagnostic: /version 99.*newer than supported version 15.*without overwriting/i },
+			{ config: futureExpected, status: "future", writable: false, diagnostic: /配置版本 99.*高于支持的版本 15.*不会覆盖/ },
 			"future async config should load known fields read-only",
 		);
 
@@ -79,12 +79,12 @@ test("config store diagnoses reads and atomically saves through an explicit path
 		await writeFile(configDir, "not a directory", "utf8");
 		assertLoadResult(
 			loadConfigSync(),
-			{ config: defaultConfig(), status: "unreadable", writable: false, diagnostic: /could not be read.*blocking saves/i },
+			{ config: defaultConfig(), status: "unreadable", writable: false, diagnostic: /配置读取失败.*禁止保存/ },
 			"sync filesystem failures should be diagnosed",
 		);
 		assertLoadResult(
 			await loadConfig(),
-			{ config: defaultConfig(), status: "unreadable", writable: false, diagnostic: /could not be read.*blocking saves/i },
+			{ config: defaultConfig(), status: "unreadable", writable: false, diagnostic: /配置读取失败.*禁止保存/ },
 			"async filesystem failures should be diagnosed",
 		);
 		await rm(configDir, { force: true });

@@ -14,9 +14,10 @@ const manifest = JSON.parse(await readFile("package.json", "utf8")) as {
 	};
 };
 
-const INPUT_SURFACE_IMAGE = "https://raw.githubusercontent.com/LinYS77/pi-glance-tps/main/assets/input-surface.png";
-const SETTINGS_IMAGE = "https://raw.githubusercontent.com/LinYS77/pi-glance-tps/main/assets/settings.png";
-const THEMES_GIF = "https://raw.githubusercontent.com/LinYS77/pi-glance-tps/main/assets/themes.gif";
+const INPUT_SURFACE_IMAGE = "./assets/input-surface.png";
+const SETTINGS_IMAGE = "./assets/settings.png";
+const THEMES_GIF = "./assets/themes.gif";
+const GALLERY_GIF = "https://raw.githubusercontent.com/jixule/pi-glance-tps/main/assets/themes.gif";
 
 function assertIncludes(document: string, fragment: string, message: string): void {
 	assert.ok(document.includes(fragment), message);
@@ -34,9 +35,7 @@ for (const document of [readme, chineseReadme]) {
 	assert.ok(!document.includes("docs/adr"), "public READMEs must not link to ignored local ADRs");
 	assertIncludes(document, "CONTEXT.md", "both READMEs should link to the maintained design reference");
 
-	assertIncludes(document, "pi -e npm:pi-glance-tps", "both READMEs should offer a one-session trial");
-	assertIncludes(document, "pi install npm:pi-glance-tps", "both READMEs should document installation");
-	assertIncludes(document, "pi update npm:pi-glance-tps", "both READMEs should document updates");
+	assertIncludes(document, "pi install ./pi-glance-tps", "both READMEs should document local installation");
 	assertIncludes(document, "/glance-tps", "both READMEs should name the only settings command");
 	assertIncludes(document, INPUT_SURFACE_IMAGE, "both READMEs should show the input surface");
 	assertIncludes(document, SETTINGS_IMAGE, "both READMEs should show the settings pane");
@@ -56,7 +55,7 @@ assert.equal(TACH_THEMES.length, 22, "the curated theme collection should remain
 assertIncludes(readme, "22 palettes", "the English README should state the palette count");
 assertIncludes(chineseReadme, "22 套配色", "the Chinese README should state the palette count");
 assertIncludes(readme, "Git · Cost · Live speed · Context · Tokens · Extensions · Model", "the English README should name the adaptive facts");
-assertIncludes(chineseReadme, "Git · 费用 · 输出吞吐率 · 上下文 · Tokens · 扩展状态 · 模型", "the Chinese README should name the adaptive facts");
+assertIncludes(chineseReadme, "Git · 费用 · 实时速度 · 上下文 · Tokens · 扩展状态 · 模型", "the Chinese README should name the adaptive facts");
 assert.match(readme, /no telemetry/i, "the English README should state the privacy boundary");
 assertIncludes(chineseReadme, "不收集遥测数据", "the Chinese README should state the privacy boundary");
 assertIncludes(readme, "Pi 1.0.0+", "the English README should state the Pi floor");
@@ -83,7 +82,7 @@ assertIncludes(chineseReadme, "活动状态默认使用 **Text**", "document the
 assert.match(manifest.description ?? "", /editor.*status line.*Pi/, "package description should identify Pi and the editor/status line");
 assert.ok(manifest.files?.includes("README*.md"), "the npm package should include both language READMEs");
 assert.deepEqual(manifest.pi?.extensions, ["./index.ts"], "the Pi extension entry should remain unchanged");
-assert.equal(manifest.pi?.image, THEMES_GIF, "the Pi package gallery should use the animated GIF preview");
+assert.equal(manifest.pi?.image, GALLERY_GIF, "the Pi package gallery should use the animated GIF preview");
 assert.equal(manifest.pi?.video, undefined, "the Pi package manifest should not retain an MP4 preview");
 
 await Promise.all([access("assets/input-surface.png"), access("assets/settings.png"), access("assets/themes.gif")]);
