@@ -23,6 +23,6 @@ test("cancelling a palette picker preserves an earlier unsaved change and parent
 	model = updatePaneModel(model, { type: "back" }).model;
 	assert.equal(model.draft.enabled, false);
 	assert.equal(model.draft.theme.dark, "dark");
-	assert.equal(createPaneViewModel(model).rows.find(row => row.selected)?.label, "Dark palette");
+	assert.equal(createPaneViewModel(model).rows.find(row => row.selected)?.label, "深色主题");
 	assert.equal(createPaneViewModel(model).dirty, true);
 });

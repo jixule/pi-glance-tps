@@ -25,10 +25,10 @@ test("toggle descriptors use explicit On and Off choices", () => {
 	const config = defaultConfig();
 	const descriptor = toggleSetting("enabled", "GlanceTps", "", c => c.enabled, (c, value) => { c.enabled = value; });
 	assert.equal(descriptor.kind, "toggle");
-	assert.equal(descriptor.value(config), "On");
+	assert.equal(descriptor.value(config), "开");
 	descriptor.select(config, 1);
 	assert.equal(config.enabled, false);
-	assert.equal(descriptor.value(config), "Off");
+	assert.equal(descriptor.value(config), "关");
 	descriptor.select(config, 0);
 	assert.equal(config.enabled, true);
 });

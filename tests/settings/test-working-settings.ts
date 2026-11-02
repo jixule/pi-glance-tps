@@ -21,7 +21,7 @@ test("Working section previews mode and speed without touching the caller config
 	h.press(k.down, k.down);
 	const before = frame(h.pane.render(100));
 	h.press(k.right);
-	assert.match(h.text(), /48 cols\/s/);
+	assert.match(h.text(), /48 列\/秒/);
 	assert.deepEqual(frame(h.pane.render(100)), before, "speed change preserves the beam position");
 	assert.equal(h.pending(), 1);
 	h.advance(900);
@@ -40,8 +40,8 @@ test("animation off keeps the speed, stops preview, and re-enables a single cloc
 	h.press(k.backTab, k.backTab); // Text is the default
 	assert.equal(h.pending(), 0);
 	h.press(k.down, k.down, k.right);
-	assert.match(h.text(), /48 cols\/s/);
-	assert.match(h.text(), /Used in Sweep mode/);
+	assert.match(h.text(), /48 列\/秒/);
+	assert.match(h.text(), /仅在 Sweep 模式下生效/);
 	assert.equal(h.pending(), 0);
 	h.press(k.up, k.up, k.right);
 	assert.equal(h.pending(), 1);
@@ -59,7 +59,7 @@ test("hidden Working previews stop the clock and resume after resizing", () => {
 	h.height(10);
 	h.press(k.backTab, k.backTab, k.right);
 	const stale = h.stale();
-	assert.doesNotMatch(h.text(), /Preview/);
+	assert.doesNotMatch(h.text(), /预览/);
 	assert.equal(h.pending(), 0);
 	const renders = h.renders();
 	stale(); h.advance(5000);

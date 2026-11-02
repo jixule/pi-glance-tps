@@ -13,13 +13,13 @@ function collectCost(ctx: SegmentRenderContext): SegmentData | undefined {
 
 export const costSegmentFeature = {
 	id: "cost",
-	label: "Cost",
+	label: "费用",
 	defaultEnabled: true,
 	settings: [
 		toggleSetting(
 			"cost.hideZero",
-			"Hide zero cost",
-			"Hide the session cost until it is greater than zero.",
+			"隐藏零费用",
+			"费用大于零之前不显示本次会话花费。",
 			(c) => c.cost.hideZero,
 			(c, v) => {
 				c.cost.hideZero = v;

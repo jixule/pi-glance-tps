@@ -60,8 +60,8 @@ export function toggleSetting(
 			label,
 			hint,
 			[
-				{ value: true, label: "On" },
-				{ value: false, label: "Off" },
+				{ value: true, label: "开" },
+				{ value: false, label: "关" },
 			],
 			read,
 			write,

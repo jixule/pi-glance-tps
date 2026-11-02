@@ -12,10 +12,13 @@ test("the Extensions overview row aligns with other status rows and preserves it
 	try {
 		h.press(keys.tab, ...Array(5).fill(keys.down));
 		const rows = h.text().split("\n");
-		const row = rows.find(line => line.includes("Extensions") && line.includes("On"));
-		const modelRow = rows.find(line => /Model\s+On/.test(line));
-		assert.ok(row && row.endsWith("On  ›"), row);
-		assert.equal(row.indexOf("On"), modelRow?.indexOf("On"));
+		const row = rows.find(line => line.includes("Extensions") && line.includes("开"));
+		const modelRow = rows.find(line => /模型\s+开/.test(line));
+		assert.ok(row && row.endsWith("开  ›"), row);
+		assert.equal(
+			visibleWidth(row.slice(0, row.indexOf("开"))),
+			visibleWidth(modelRow!.slice(0, modelRow!.indexOf("开"))),
+		);
 		assert.ok(h.text().includes("MCP OK"));
 		statuses.set("a", "MCP DOWN"); assert.ok(h.text().includes("MCP DOWN"));
 		h.press(keys.space); assert.equal(h.text().includes("MCP DOWN"), false);
@@ -31,19 +34,19 @@ test("the Extensions overview row aligns with other status rows and preserves it
 test("Extensions details show live publisher keys and text, including when the group is disabled", () => {
 	const config = defaultConfig();
 	config.segments.find(s => s.id === "extensions")!.enabled = false;
-	const statuses = new Map([["pi-quotas-usage", "DEMO 5h 80% left"], ["worker", "Working"]]);
+	const statuses = new Map([["pi-quotas-usage", "DEMO 5h 80% left"], ["worker", "工作中"]]);
 	const h = paneHarness(config, { getExtensionStatuses: () => statuses });
 	try {
 		h.press(keys.tab, ...Array(5).fill(keys.down), keys.enter);
-		assert.ok(h.text().includes("Status line / Extensions (Off)"));
+		assert.ok(h.text().includes("状态栏 / Extensions（已关闭）"));
 		assert.ok(h.text().includes("pi-quotas-usage"));
 		assert.ok(h.text().includes("DEMO 5h 80% left"));
 		assert.ok(!h.text().includes("[Enter] Edit") && !h.text().includes("[Space] Toggle"));
 		statuses.set("pi-quotas-usage", "DEMO 5h 10% left");
 		assert.ok(h.text().includes("DEMO 5h 10% left"), "same-map updates must also reach open details");
 		h.press(keys.enter, keys.space, keys.right, "j");
-		assert.ok(h.text().includes("No changes"), "diagnostics must not create configuration edits");
-		statuses.clear(); assert.ok(h.text().includes("No extension statuses published."));
+		assert.ok(h.text().includes("无修改"), "diagnostics must not create configuration edits");
+		statuses.clear(); assert.ok(h.text().includes("暂无扩展发布的状态。"));
 		h.press(keys.esc); assert.ok(h.text().includes("› Extensions"));
 	} finally { h.pane.dispose(); }
 });
@@ -74,8 +77,8 @@ test("extension diagnostics scroll, remember their place, clamp when publishers 
 
 test("diagnostics distinguish an unattached source from an attached but empty map", () => {
 	for (const [source, message] of [
-		[undefined, "Extension status source is not attached."],
-		[new Map<string, string>(), "No extension statuses published."],
+		[undefined, "扩展状态数据源未连接。"],
+		[new Map<string, string>(), "暂无扩展发布的状态。"],
 	] as const) {
 		const h = paneHarness(defaultConfig(), { getExtensionStatuses: () => source });
 		try {

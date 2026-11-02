@@ -58,17 +58,17 @@ function collectThroughput(ctx: SegmentRenderContext): SegmentData {
 
 export const throughputSegmentFeature = {
 	id: "throughput",
-	label: "Live speed",
+	label: "实时速度",
 	iconSpacing: { nerd: 2 },
 	defaultEnabled: true,
 	settings: [
 		choiceSetting(
 			"throughput.precision",
-			"Decimal places",
-			"Live speed while streaming, then the message average. Falls back to the request-level average.",
+			"小数位",
+			"生成中显示实时速度，结束后显示本条消息平均值；无实时数据时回退到请求级平均。",
 			THROUGHPUT_PRECISION_DESCRIPTOR.values.map((value) => ({
 				value,
-				label: value === "auto" ? "Automatic" : value === 1 ? "1 decimal" : "Whole numbers",
+				label: value === "auto" ? "自动" : value === 1 ? "1 位小数" : "取整",
 			})),
 			(c) => c.throughput.precision,
 			(c, v) => {

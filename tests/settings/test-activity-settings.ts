@@ -7,13 +7,13 @@ test("Activity offers one display choice and five retained effect controls, inac
 	const h = paneHarness();
 	try {
 		h.press(k.tab, k.tab);
-		assert.match(h.text(), /\[ Activity \]/);
-		assert.deepEqual(getSettingsRows(h.config, "working").map(r => r.label), ["Display mode", "Effect area", "Sweep speed", "Effect color", "Compaction / summary speed", "Retry blink rate"]);
-		assert.match(h.text(), /Display mode\s+Text/);
+		assert.match(h.text(), /\[ 活动状态 \]/);
+		assert.deepEqual(getSettingsRows(h.config, "working").map(r => r.label), ["显示方式", "动效范围", "扫光速度", "动效颜色", "压缩 / 摘要速度", "重试闪烁频率"]);
+		assert.match(h.text(), /显示方式\s+Text/);
 		assert.equal(h.pending(), 0);
 		h.press(k.down, k.down, k.right);
-		assert.match(h.text(), /48 cols\/s/);
-		assert.match(h.text(), /Used in Sweep mode/);
+		assert.match(h.text(), /48 列\/秒/);
+		assert.match(h.text(), /仅在 Sweep 模式下生效/);
 		assert.equal(h.pending(), 0, "editing stored effect parameters must not turn Text into Sweep");
 		h.press("s");
 		const done = h.completion(); assert.ok(done?.action === "save");
@@ -26,15 +26,15 @@ test("fractional fields have their own steps, limits and local confirmation/canc
 	const h = paneHarness();
 	try {
 		h.press(k.tab, k.tab, ...Array(4).fill(k.down), k.enter, "1.35", k.enter);
-		assert.match(h.text(), /1\.35× · 63\.45 cols\/s/);
+		assert.match(h.text(), /1\.35× · 63\.45 列\/秒/);
 		h.press(k.right); assert.match(h.text(), /1\.40×/);
 		h.press(k.enter, "0.2", k.enter);
-		assert.match(h.text(), /0\.25 to 2/);
+		assert.match(h.text(), /0.25 到 2/);
 		h.press(k.esc); assert.match(h.text(), /1\.40×/);
 		h.press(k.down, k.enter, "0.75", k.enter, k.right);
 		assert.match(h.text(), /1\.00 Hz/);
 		h.press(k.enter, "1.234", k.enter);
-		assert.match(h.text(), /2 decimals/);
+		assert.match(h.text(), /2 位小数/);
 		h.press(k.esc, "s");
 		const done = h.completion(); assert.ok(done?.action === "save");
 		assert.equal(done.config.editor.summarySpeedMultiplier, 1.4);
@@ -48,20 +48,20 @@ test("Activity previews follow the field and chosen mode, with transient scenari
 	const h = paneHarness();
 	try {
 		h.press(k.tab, k.tab);
-		assert.match(h.text(), /Preview · Example · Text · Working/);
+		assert.match(h.text(), /预览 · 示例 · Text · 工作中/);
 		assert.equal(h.pending(), 0);
-		h.press("p"); assert.match(h.text(), /Text · Compacting/);
-		assert.match(h.text(), /No changes/);
+		h.press("p"); assert.match(h.text(), /Text · 压缩上下文中/);
+		assert.match(h.text(), /无修改/);
 		h.press(k.right); h.text(); assert.equal(h.pending(), 1);
 		h.press(...Array(4).fill(k.down));
-		assert.match(h.text(), /Sweep · Compacting · 23\.5 cols\/s/);
-		h.press(k.down); assert.match(h.text(), /Sweep · Retrying · 0\.50 Hz/);
+		assert.match(h.text(), /Sweep · 压缩上下文中 · 23\.5 列\/秒/);
+		h.press(k.down); assert.match(h.text(), /Sweep · 重试中 · 0\.50 Hz/);
 		const bright = h.pane.render(180).at(-1);
 		h.advance(1000); const normal = h.pane.render(180).at(-1);
 		assert.notEqual(bright, normal);
 		h.advance(1000); assert.equal(h.pane.render(180).at(-1), bright);
-		h.press("p"); assert.match(h.text(), /Idle with draft/); assert.equal(h.pending(), 0);
-		h.press("p", k.right); assert.match(h.text(), /Sweep · Working/);
+		h.press("p"); assert.match(h.text(), /空闲（有草稿）/); assert.equal(h.pending(), 0);
+		h.press("p", k.right); assert.match(h.text(), /Sweep · 工作中/);
 		h.height(12); h.text(); assert.equal(h.pending(), 0);
 		h.advance(5000); h.height(40); h.text(); assert.equal(h.pending(), 1);
 		h.press(...Array(5).fill(k.up), k.left); h.text(); assert.equal(h.pending(), 0);

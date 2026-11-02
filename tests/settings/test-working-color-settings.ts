@@ -17,8 +17,8 @@ test("Working has a theme-aware color picker with live preview, confirm and canc
 	try {
 		const row = getSettingsRows(h.config, "working").find(row => row.id === "working.color");
 		assert.ok(row && row.kind === "choice");
-		assert.equal(row.value, "Theme default");
-		assert.deepEqual(row.options.map(o => o.label), ["Theme default", "Amber", "Rose", "Violet", "Blue", "Teal", "Mint", "Coral", "Copper"]);
+		assert.equal(row.value, "跟随主题");
+		assert.deepEqual(row.options.map(o => o.label), ["跟随主题", "琥珀", "玫瑰", "紫罗兰", "蓝色", "青色", "薄荷", "珊瑚", "铜色"]);
 		h.press(k.backTab, k.backTab, k.right, k.down, k.down, k.down);
 		h.advance(1200);
 		const before = frame(h.pane.render(100));
@@ -42,7 +42,7 @@ test("color can be configured while animation is off without starting a clock", 
 	try {
 		h.press(k.backTab, k.backTab, k.down, k.down, k.down);
 		assert.equal(h.pending(), 0);
-		assert.match(h.text(), /Used in Sweep mode/);
+		assert.match(h.text(), /仅在 Sweep 模式下生效/);
 		h.press(k.enter, k.down, k.down, k.down, k.down, k.enter, "s");
 		const saved = h.completion(); assert.ok(saved?.action === "save");
 		assert.equal(saved.config.editor.workingSweepColor, "blue");
@@ -58,7 +58,7 @@ test("the last color stays reachable and saves correctly when the picker must sc
 		h.press(k.backTab, k.backTab, k.down, k.down, k.down, k.enter);
 		h.text(64);
 		h.press(...Array(8).fill(k.down));
-		assert.match(h.text(64), /→\s+Copper/);
+		assert.match(h.text(64), /→\s+铜色/);
 		const lines = h.pane.render(64);
 		assert.ok(lines.length <= 16);
 		for (const line of lines) assert.ok(visibleWidth(line) <= 64);

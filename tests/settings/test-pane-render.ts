@@ -49,10 +49,10 @@ test("GlanceTps off and discard confirmation keep the same preview area", () => 
 	try {
 		const initial = h.pane.render(100);
 		h.press(k.space);
-		assert.match(h.text(), /Preview · GlanceTps is off/);
+		assert.match(h.text(), /预览 · GlanceTps 已关闭/);
 		assert.equal(h.pane.render(100).length, initial.length, "turning the frame off must not collapse its preview space");
 		h.press(k.esc);
-		assert.match(h.text(), /Discard unsaved changes/);
+		assert.match(h.text(), /放弃未保存的修改/);
 		assert.equal(h.pane.render(100).length, initial.length);
 		h.press(k.esc, k.space);
 		assert.deepEqual(h.pane.render(100), initial);
@@ -62,13 +62,13 @@ test("GlanceTps off and discard confirmation keep the same preview area", () => 
 test("new users see four sections, readable values and save/close without focus columns", () => {
 	const h = paneHarness();
 	const text = h.text();
-	for (const label of ["Appearance", "Status line", "Activity", "Light palette", "Dark palette", "Nerd Font", "Smart path", "Save & close", "No changes"]) assert.ok(text.includes(label), label);
+	for (const label of ["外观", "状态栏", "活动状态", "浅色主题", "深色主题", "Nerd Font", "智能路径", "保存并关闭", "无修改"]) assert.ok(text.includes(label), label);
 	assert.ok(!text.includes("General") && !text.includes("Enabled"));
 	h.press(k.space);
-	assert.match(h.text(), /GlanceTps \*\s+Off/);
-	assert.match(h.text(), /Unsaved changes/);
+	assert.match(h.text(), /GlanceTps \*\s+关/);
+	assert.match(h.text(), /未保存的修改/);
 	h.press(k.enter);
-	assert.match(h.text(), /No changes/);
+	assert.match(h.text(), /无修改/);
 	h.press(k.esc);
 	assert.equal(h.completion()?.action, "cancel");
 	h.pane.dispose();
@@ -77,16 +77,16 @@ test("new users see four sections, readable values and save/close without focus 
 test("keyboard paths toggle status directly, open details once, and return to the right item", () => {
 	const h = paneHarness();
 	h.press(k.tab, k.space, "j");
-	assert.match(h.text(), /› Git \*\s+Off/);
+	assert.match(h.text(), /› Git \*\s+关/);
 	h.press(k.enter);
-	assert.match(h.text(), /Status line \/ Git/);
+	assert.match(h.text(), /状态栏 \/ Git/);
 	assert.ok(!h.text().includes("Enabled"));
 	h.press(k.esc);
-	assert.match(h.text(), /› Git \*\s+Off/);
+	assert.match(h.text(), /› Git \*\s+关/);
 	h.press(k.tab);
-	assert.match(h.text(), /Sweep speed\s+‹ 47 cols\/s ›/);
+	assert.match(h.text(), /扫光速度\s+‹ 47 列\/秒 ›/);
 	h.press(k.backTab);
-	assert.match(h.text(), /› Git \*\s+Off/);
+	assert.match(h.text(), /› Git \*\s+关/);
 	h.press("s");
 	const done = h.completion();
 	assert.equal(done?.action, "save");
@@ -130,11 +130,11 @@ test("Pi selection bindings take precedence; Ctrl-C always cancels and input own
 	assert.ok(h.pane.render(100).join("").includes(CURSOR_MARKER));
 	h.press("s", "r", "q");
 	assert.equal(h.completion(), undefined);
-	assert.doesNotMatch(h.text(), /Invalid value/);
+	assert.doesNotMatch(h.text(), /输入无效/);
 	h.press("!");
-	assert.match(h.text(), /whole number/);
+	assert.match(h.text(), /整数/);
 	h.press("x"); // restore
-	assert.match(h.text(), /47 cols\/s/);
+	assert.match(h.text(), /47 列\/秒/);
 	h.press("\x03");
 	assert.equal(h.completion()?.action, "cancel");
 	const count = h.renders();
@@ -150,12 +150,12 @@ test("number input supports correction, validation, cursor focus and local resto
 	assert.ok(!h.pane.render(100).join("").includes(CURSOR_MARKER));
 	h.pane.focused = true;
 	h.press("\x15", "9", k.enter);
-	assert.match(h.text(), /whole number/);
+	assert.match(h.text(), /整数/);
 	assert.equal(h.completion(), undefined);
 	h.press("\x15", "62", k.enter);
-	assert.match(h.text(), /Sweep speed \*\s+‹ 62 cols\/s ›/);
+	assert.match(h.text(), /扫光速度 \*\s+‹ 62 列\/秒 ›/);
 	h.press(k.enter, "\x15", "99", k.esc);
-	assert.match(h.text(), /62 cols\/s/);
+	assert.match(h.text(), /62 列\/秒/);
 	h.press("s");
 	const saved = h.completion();
 	if (saved?.action !== "save") throw new Error("not saved");
@@ -176,14 +176,14 @@ test("typing a speed replaces the initial number without requiring a delete shor
 test("dirty exit and reset show safe choices; Enter alone never discards edits", () => {
 	const h = paneHarness();
 	h.press(k.space, k.esc);
-	assert.match(h.text(), /Discard unsaved changes\?/);
+	assert.match(h.text(), /放弃未保存的修改？/);
 	h.press(k.enter);
 	assert.equal(h.completion(), undefined);
-	assert.match(h.text(), /GlanceTps \*\s+Off/);
+	assert.match(h.text(), /GlanceTps \*\s+关/);
 	h.press("r");
-	assert.match(h.text(), /Reset all settings\?/);
+	assert.match(h.text(), /重置所有设置？/);
 	h.press(k.esc);
-	assert.match(h.text(), /GlanceTps \*\s+Off/);
+	assert.match(h.text(), /GlanceTps \*\s+关/);
 	h.press(k.esc, k.down, k.enter);
 	assert.deepEqual(h.completion(), { action: "cancel" });
 	h.pane.dispose();
@@ -198,7 +198,7 @@ test("palette preview uses the edited slot, injected styles and the reported col
 		assert.ok(raw.includes(styles.border("╭")));
 		assert.equal(raw.includes("\x1b[38;2;"), trueColor);
 		h.press(k.esc);
-		assert.match(h.text(), /Light palette\s+Light/);
+		assert.match(h.text(), /浅色主题\s+Light/);
 		h.pane.dispose();
 	}
 	const dark = resolveBuiltInGlanceTpsStyles("dark");

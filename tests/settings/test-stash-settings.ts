@@ -13,11 +13,11 @@ function capture() {
 
 test("Input records a shortcut, rejects Pi conflicts, and saves only after confirming", () => {
 	const h = capture();
-	assert.match(h.text(), /Stash shortcut/);
+	assert.match(h.text(), /暂存快捷键/);
 	h.press("\x07");
-	assert.match(h.text(), /Used by Pi/);
+	assert.match(h.text(), /已被 Pi 占用/);
 	h.press(k.enter);
-	assert.match(h.text(), /Used by Pi/);
+	assert.match(h.text(), /已被 Pi 占用/);
 	h.press("\x1bx");
 	assert.match(h.text(), /alt\+x/);
 	h.press(k.enter, "s");

@@ -49,7 +49,7 @@ test("a malformed draft is reported without taking editor ownership away or repl
 	const ctx = createRuntimeTestContext();
 	h.runtime.events.sessionStart({}, ctx.ctx);
 	assert.equal(ctx.editorFactories.length, 1);
-	assert.match(ctx.notifications[0]!.message, /saved draft/);
+	assert.match(ctx.notifications[0]!.message, /已保存的草稿/);
 	assert.equal(writes, 0);
 	await h.runtime.events.sessionShutdown({}, ctx.ctx);
 });

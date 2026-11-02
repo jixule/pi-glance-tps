@@ -6,15 +6,15 @@ import { SEGMENT_IDS, type SegmentId } from "../../src/segments/registry.js";
 
 test("four sections have stable, user-facing labels and one home for each setting", () => {
 	const config = defaultConfig();
-	assert.deepEqual(SETTINGS_SECTIONS.map(s => s.label), ["Appearance", "Status line", "Activity", "Input"]);
+	assert.deepEqual(SETTINGS_SECTIONS.map(s => s.label), ["外观", "状态栏", "活动状态", "输入"]);
 	assert.deepEqual(getSettingsRows(config, "appearance").map(row => [row.label, row.value]), [
-		["GlanceTps", "On"], ["Light palette", "Light"], ["Dark palette", "Dark"], ["Icons", "Nerd Font"],
-		["Workspace label", "Smart path"],
+		["GlanceTps", "开"], ["浅色主题", "Light"], ["深色主题", "Dark"], ["图标", "Nerd Font"],
+		["工作区标签", "智能路径"],
 	]);
 	assert.deepEqual(getSettingsRows(config, "input").map(row => [row.label, row.value]), [
-		["Editor height", "3 rows"], ["Space above editor", "1 row"], ["Prompt stash", "On"], ["Stash shortcut", "alt+s"],
+		["编辑框高度", "3 行"], ["编辑框上方留白", "1 行"], ["提示词暂存", "开"], ["暂存快捷键", "alt+s"],
 	]);
-	assert.deepEqual(getSettingsRows(config, "working").map(row => [row.label, row.value]), [["Display mode", "Text"], ["Effect area", "Full border"], ["Sweep speed", "47 cols/s"], ["Effect color", "Theme default"], ["Compaction / summary speed", "0.50× · 23.5 cols/s"], ["Retry blink rate", "0.50 Hz"]]);
+	assert.deepEqual(getSettingsRows(config, "working").map(row => [row.label, row.value]), [["显示方式", "Text"], ["动效范围", "整圈边框"], ["扫光速度", "47 列/秒"], ["动效颜色", "跟随主题"], ["压缩 / 摘要速度", "0.50× · 23.5 列/秒"], ["重试闪烁频率", "0.50 Hz"]]);
 	const rows = [...SETTINGS_SECTIONS.flatMap(s => getSettingsRows(config, s.id)), ...SEGMENT_IDS.flatMap(id => getSettingsRows(config, "status", id))];
 	assert.equal(new Set(rows.map(r => r.id)).size, rows.length);
 	for (const row of rows) {
@@ -45,9 +45,9 @@ test("status order, disabled entries, custom refresh values and all 22 palettes 
 	const config = defaultConfig();
 	config.segments.reverse(); config.segments[0]!.enabled = false;
 	config.git.pollIntervalMs = 7500;
-	assert.deepEqual(getSettingsRows(config, "status").map(r => r.value), ["Off", "On", "On", "On", "On", "On", "On"]);
-	assert.equal(getSettingsRows(config, "status")[0]!.label, "Model");
-	assert.equal(getSettingsRows(config, "status", "git").find(r => r.id === "git.polling")!.value, "7.5 seconds");
+	assert.deepEqual(getSettingsRows(config, "status").map(r => r.value), ["关", "开", "开", "开", "开", "开", "开"]);
+	assert.equal(getSettingsRows(config, "status")[0]!.label, "模型");
+	assert.equal(getSettingsRows(config, "status", "git").find(r => r.id === "git.polling")!.value, "7.5 秒");
 	for (const slot of ["light", "dark"] as const) {
 		const catalog = getThemeCatalogForSlot(slot);
 		assert.equal(catalog.length, 22);

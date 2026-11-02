@@ -46,16 +46,16 @@ function collectContext(ctx: SegmentRenderContext): SegmentData | undefined {
 
 export const contextSegmentFeature = {
 	id: "context",
-	label: "Context",
+	label: "上下文",
 	defaultEnabled: true,
 	settings: [
 		choiceSetting(
 			"context.display",
-			"Show",
-			"Choose how context usage appears.",
+			"显示",
+			"选择上下文用量的显示方式。",
 			[
-				{ value: "percent+tokens", label: "Percentage + tokens" },
-				{ value: "percent", label: "Percentage" },
+				{ value: "percent+tokens", label: "百分比 + Tokens" },
+				{ value: "percent", label: "百分比" },
 				{ value: "tokens", label: "Tokens" },
 			],
 			(c) => c.context.display,
@@ -65,11 +65,11 @@ export const contextSegmentFeature = {
 		),
 		choiceSetting(
 			"context.unknown",
-			"When unavailable",
-			"What to show when Pi cannot report context usage.",
+			"不可用时",
+			"Pi 无法上报上下文用量时显示什么。",
 			[
-				{ value: "show", label: "Show ?" },
-				{ value: "hide", label: "Hide" },
+				{ value: "show", label: "显示 ?" },
+				{ value: "hide", label: "隐藏" },
 			],
 			(c) => c.context.unknown,
 			(c, v) => {

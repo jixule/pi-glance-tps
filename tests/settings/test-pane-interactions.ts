@@ -18,13 +18,13 @@ test("Left means off and Right means on for every boolean and status row", () =>
 		let model = start;
 		for (let i = 0; i < 3; i++) {
 			model = step(model, { type: "adjust", direction: -1 });
-			assert.equal(selected(model).value, "Off");
+			assert.equal(selected(model).value, "关");
 		}
 		for (let i = 0; i < 3; i++) {
 			model = step(model, { type: "adjust", direction: 1 });
-			assert.equal(selected(model).value, "On");
+			assert.equal(selected(model).value, "开");
 		}
-		assert.equal(selected(step(model, { type: "toggle" })).value, "Off");
+		assert.equal(selected(step(model, { type: "toggle" })).value, "关");
 	}
 });
 
@@ -80,7 +80,7 @@ test("opening an existing custom value neither substitutes a preset nor loses it
 	const row = down(step(section(createPaneModel(config)), { type: "activate" }), 4);
 	const opened = step(row, { type: "activate" });
 	const choices = createPaneViewModel(opened).choices;
-	assert.match(choices.find(choice => choice.selected)!.label, /7\.5 seconds/);
+	assert.match(choices.find(choice => choice.selected)!.label, /7\.5 秒/);
 	assert.equal(step(opened, { type: "activate" }).draft.git.pollIntervalMs, 7500);
 	let preview = step(opened, { type: "move", direction: "up" });
 	assert.equal(preview.draft.git.pollIntervalMs, 30000);
@@ -91,23 +91,23 @@ test("opening an existing custom value neither substitutes a preset nor loses it
 
 test("sections remember the detail page; returning and re-entering restores its row", () => {
 	let model = down(step(section(createPaneModel(defaultConfig())), { type: "activate" }), 2);
-	assert.equal(selected(model).label, "Commit ID");
+	assert.equal(selected(model).label, "提交 ID");
 	model = section(model);
 	model = step(model, { type: "section", direction: -1 });
-	assert.equal(createPaneViewModel(model).title, "Status line / Git");
-	assert.equal(selected(model).label, "Commit ID");
+	assert.equal(createPaneViewModel(model).title, "状态栏 / Git");
+	assert.equal(selected(model).label, "提交 ID");
 	model = step(model, { type: "back" });
 	assert.equal(selected(model).label, "Git");
 	model = step(model, { type: "activate" });
-	assert.equal(selected(model).label, "Commit ID");
+	assert.equal(selected(model).label, "提交 ID");
 });
 
 test("list navigation clamps, including paging and destructive confirmation choices", () => {
 	const root = createPaneModel(defaultConfig());
 	assert.equal(selected(step(root, { type: "move", direction: "up" })).label, "GlanceTps");
-	assert.equal(selected(down(root, 999)).label, "Workspace label");
+	assert.equal(selected(down(root, 999)).label, "工作区标签");
 	const confirmation = step(root, { type: "reset" });
-	assert.equal(createPaneViewModel(step(confirmation, { type: "move", direction: "up" })).choices.find(c => c.selected)!.label, "Keep editing");
+	assert.equal(createPaneViewModel(step(confirmation, { type: "move", direction: "up" })).choices.find(c => c.selected)!.label, "继续编辑");
 	const palette = step(down(root), { type: "activate" });
 	assert.equal(createPaneViewModel(down(palette, 999)).choices.at(-1)!.selected, true);
 });
@@ -125,10 +125,10 @@ test("field editors do not advertise Save or section switching", () => {
 	for (const enter of [[k.down, k.enter], [k.backTab, k.backTab, k.enter], [k.backTab, k.backTab, k.down, k.down, k.enter]]) {
 		const pane = paneHarness();
 		pane.press(...enter);
-		assert.ok(!pane.text(40).includes("Save & close"));
+		assert.ok(!pane.text(40).includes("保存并关闭"));
 		assert.ok(!pane.text(40).includes("[Tab]"));
-		assert.match(pane.text(), /\[Enter\] Confirm/);
-		assert.match(pane.text(), /\[Esc\] Cancel/);
+		assert.match(pane.text(), /\[Enter\] 确认/);
+		assert.match(pane.text(), /\[Esc\] 取消/);
 		pane.pane.dispose();
 	}
 });
@@ -144,10 +144,10 @@ test("number replacement works for Kitty key events and fragmented paste stays t
 	const paste = paneHarness();
 	paste.press(k.backTab, k.backTab, k.down, k.down, k.enter, "\x1b[200~", "80", "\r", "s", "r", "q", "\x1b[201~");
 	assert.equal(paste.completion(), undefined);
-	assert.match(paste.text(), /Sweep speed/);
-	assert.doesNotMatch(paste.text(), /Reset all settings\?/);
+	assert.match(paste.text(), /扫光速度/);
+	assert.doesNotMatch(paste.text(), /重置所有设置？/);
 	paste.press(k.esc);
-	assert.match(paste.text(), /47 cols\/s/);
+	assert.match(paste.text(), /47 列\/秒/);
 	paste.pane.dispose();
 	const trailingEnter = paneHarness();
 	trailingEnter.press(k.backTab, k.backTab, k.down, k.down, k.enter, "\x1b[200~74\x1b[201~\r", "s");
@@ -163,9 +163,9 @@ test("help reflects injected Pi selection keys and disabled bindings", () => {
 	const text = h.text();
 	for (const key of ["Ctrl+K", "Ctrl+J", "Ctrl+G", "Ctrl+X", "Ctrl+N"]) assert.ok(text.includes(key), key);
 	h.press("\x0e", "\x0e", "\x0a", "\x0a", "\x07"); // Activity -> speed -> edit
-	assert.match(h.text(), /Sweep speed/);
-	assert.match(h.text(), /\[Ctrl\+G\] Confirm/);
-	assert.match(h.text(), /\[Ctrl\+X\] Cancel/);
+	assert.match(h.text(), /扫光速度/);
+	assert.match(h.text(), /\[Ctrl\+G\] 确认/);
+	assert.match(h.text(), /\[Ctrl\+X\] 取消/);
 	h.pane.dispose();
 	const noCancel = paneHarness(defaultConfig(), {}, new KeybindingsManager(TUI_KEYBINDINGS, { "tui.select.cancel": [] }));
 	assert.ok(!noCancel.text().includes("[Esc]"));

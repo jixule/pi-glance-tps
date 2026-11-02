@@ -763,8 +763,8 @@ await test("save failure should notify the exact error copy", async () => {
 	const renderBaseline = test.getRenderRequests();
 	await harness.runtime.commands.openPane("", test.ctx);
 
-	assert.equal(hasNotification(test.notifications, "pi-glance-tps configuration save failed; keeping previous configuration", "error"), true, "save failure should notify the exact error copy");
-	assert.equal(hasNotification(test.notifications, "pi-glance-tps configuration saved", "info"), false, "save failure should not notify success");
+	assert.equal(hasNotification(test.notifications, "配置保存失败，继续使用原有配置", "error"), true, "save failure should notify the exact error copy");
+	assert.equal(hasNotification(test.notifications, "pi-glance-tps 配置已保存", "info"), false, "save failure should not notify success");
 	assert.deepEqual(test.surfaceCalls.slice(surfaceBaseline), [], "save failure should not reinstall or clear the input surface");
 	assert.deepEqual(git.schedules.slice(scheduleBaseline), [], "save failure should not schedule git refreshes");
 	assert.equal(test.getRenderRequests(), renderBaseline, "save failure should not request a render");
@@ -798,7 +798,7 @@ await test("invalid config load should notify its diagnostic once at session sta
 
 	assert.deepEqual(harness.savedConfigs, [], "read-only fallback config should block /glance-tps from overwriting the existing file");
 	assert.equal(
-		hasNotification(test.notifications.slice(notificationBaseline), "pi-glance-tps configuration save blocked to protect the existing file; fix or remove it, then /reload", "error"),
+		hasNotification(test.notifications.slice(notificationBaseline), "配置文件存在问题时不会覆盖保存；请先修复或删除该文件，然后 /reload", "error"),
 		true,
 		"blocked save should explain how to recover",
 	);
@@ -851,7 +851,7 @@ await test("saveConfig should receive the pane result config before active confi
 	await harness.runtime.commands.openPane("", test.ctx);
 
 	assert.deepEqual(harness.savedConfigs, [nextConfig], "save success should pass the next config to saveConfig");
-	assert.equal(hasNotification(test.notifications, "pi-glance-tps configuration saved", "info"), true, "save success should notify saved");
+	assert.equal(hasNotification(test.notifications, "pi-glance-tps 配置已保存", "info"), true, "save success should notify saved");
 	assert.equal(harness.showPaneContexts[0], test.ctx, "showPane should receive the command context passed to /glance-tps");
 	assert.equal(harness.showPanePreviewStates[0]?.workspace.path, "/repo", "showPane should receive the current runtime state for preview rendering");
 	assertAmbientPaneOptions(harness.showPaneOptions[0], "default pane open");
@@ -995,7 +995,7 @@ await test("disabled-start save failure should notify the exact error copy", asy
 	const surfaceBaseline = test.surfaceCalls.length;
 	await harness.runtime.commands.openPane("", test.ctx);
 
-	assert.equal(hasNotification(test.notifications, "pi-glance-tps configuration save failed; keeping previous configuration", "error"), true, "disabled-start save failure should notify the exact error copy");
+	assert.equal(hasNotification(test.notifications, "配置保存失败，继续使用原有配置", "error"), true, "disabled-start save failure should notify the exact error copy");
 	assert.deepEqual(harness.savedConfigs, [], "disabled-start failed save should not record a persisted config");
 	assert.deepEqual(test.surfaceCalls.slice(surfaceBaseline), [], "disabled-start save failure should not install or clear the input surface");
 	assert.equal(git.created, 0, "disabled-start save failure should not create a git refresher");
@@ -1021,7 +1021,7 @@ for (const startingEnabled of [true, false] as const) {
 	const renderBaseline = test.getRenderRequests();
 	await harness.runtime.commands.openPane("", test.ctx);
 
-	assert.equal(hasNotification(test.notifications, "pi-glance-tps configuration cancelled", "info"), true, `${startingEnabled ? "enabled" : "disabled"} cancel should notify cancellation`);
+	assert.equal(hasNotification(test.notifications, "已取消 pi-glance-tps 配置修改", "info"), true, `${startingEnabled ? "enabled" : "disabled"} cancel should notify cancellation`);
 	assert.deepEqual(harness.savedConfigs, [], `${startingEnabled ? "enabled" : "disabled"} cancel should not save config`);
 	assert.deepEqual(test.surfaceCalls.slice(surfaceBaseline), [], `${startingEnabled ? "enabled" : "disabled"} cancel should not install or clear the surface`);
 	assert.deepEqual(git.schedules.slice(scheduleBaseline), [], `${startingEnabled ? "enabled" : "disabled"} cancel should not schedule git refreshes`);
@@ -1206,7 +1206,7 @@ for (const mode of ["rpc", "json", "print"] as const) {
 	assert.equal(git.created, 0, `${mode} mode should not create the TUI-only git refresher across lifecycle events`);
 	assert.equal(test.getThemeReads(), 0, `${mode} mode should not read the current UI theme because TUI-only provider paths are skipped`);
 	assert.deepEqual(harness.showPaneInitials, [], `${mode} /glance-tps should not invoke the custom pane adapter`);
-	assert.equal(hasNotification(test.notifications, "pi-glance-tps configuration pane requires TUI mode", "error"), true, `${mode} /glance-tps should notify that the pane requires TUI mode`);
+	assert.equal(hasNotification(test.notifications, "pi-glance-tps 设置面板需要在 TUI 模式下使用", "error"), true, `${mode} /glance-tps should notify that the pane requires TUI mode`);
 }
 
 await test("TUI /glance-tps should still open after provider-count snapshot setup", async () => {

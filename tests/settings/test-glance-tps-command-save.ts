@@ -120,17 +120,17 @@ async function main(): Promise<void> {
 		const failureBaseline = test.surfaceCalls.length;
 		await command("", test.ctx);
 		assert.equal(
-			hasNotification(test.notifications, "pi-glance-tps configuration save failed; keeping previous configuration", "error"),
+			hasNotification(test.notifications, "配置保存失败，继续使用原有配置", "error"),
 			true,
 			"save failure should notify an error",
 		);
-		assert.equal(hasNotification(test.notifications, "pi-glance-tps configuration saved", "info"), false, "save failure should not notify success");
+		assert.equal(hasNotification(test.notifications, "pi-glance-tps 配置已保存", "info"), false, "save failure should not notify success");
 		assertNoNewSurfaceCalls(test.surfaceCalls, failureBaseline, "save failure should not refresh or reinstall/clear the input surface");
 
 		test.customResults.push({ action: "cancel" });
 		await command("", test.ctx);
 		const activeConfigPane = test.renderedPanes.at(-1)?.join("\n") ?? "";
-		assert.match(activeConfigPane, /GlanceTps\s+On/, "after failed save, the next /glance-tps pane should still receive the previous enabled config");
+		assert.match(activeConfigPane, /GlanceTps\s+开/, "after failed save, the next /glance-tps pane should still receive the previous enabled config");
 
 		await rm(configDir, { force: true });
 		await mkdir(configDir, { recursive: true });
@@ -138,7 +138,7 @@ async function main(): Promise<void> {
 		test.customResults.push({ action: "save", config: disabled(initialConfig) });
 		await command("", test.ctx);
 		assert.equal(JSON.parse(await readFile(configPath, "utf8")).enabled, false, "successful save should write next config to disk");
-		assert.equal(hasNotification(test.notifications, "pi-glance-tps configuration saved", "info"), true, "successful save should notify success");
+		assert.equal(hasNotification(test.notifications, "pi-glance-tps 配置已保存", "info"), true, "successful save should notify success");
 		assert.deepEqual(
 			test.surfaceCalls.slice(successBaseline),
 			["setFooter:clear"],
@@ -152,10 +152,10 @@ async function main(): Promise<void> {
 		test.customResults.push({ action: "cancel" });
 		await command("", test.ctx);
 		const disabledActivePane = test.renderedPanes.at(-1)?.join("\n") ?? "";
-		assert.match(disabledActivePane, /GlanceTps\s+Off/, "after successful disabled save, the next /glance-tps pane should receive disabled active config");
-		assert.equal(hasNotification(test.notifications.slice(notificationsBeforeCancel), "pi-glance-tps configuration cancelled", "info"), true, "cancel should keep the existing cancellation notice");
+		assert.match(disabledActivePane, /GlanceTps\s+关/, "after successful disabled save, the next /glance-tps pane should receive disabled active config");
+		assert.equal(hasNotification(test.notifications.slice(notificationsBeforeCancel), "已取消 pi-glance-tps 配置修改", "info"), true, "cancel should keep the existing cancellation notice");
 		assert.equal(
-			hasNotification(test.notifications.slice(notificationsBeforeCancel), "pi-glance-tps configuration save failed; keeping previous configuration", "error"),
+			hasNotification(test.notifications.slice(notificationsBeforeCancel), "配置保存失败，继续使用原有配置", "error"),
 			false,
 			"cancel should not attempt to save even when the config path is blocked",
 		);

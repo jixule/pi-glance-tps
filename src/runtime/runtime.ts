@@ -370,20 +370,20 @@ export function createGlanceTpsRuntime(adapters: GlanceTpsRuntimeAdapters): Glan
 			getPreviewState: () => isCurrentUiGeneration(generation) ? refreshSession.ensureState(ctx) : previewState,
 		});
 		if (result.action === "cancel") {
-			ctx.ui.notify("pi-glance-tps configuration cancelled", "info");
+			ctx.ui.notify("已取消 pi-glance-tps 配置修改", "info");
 			return;
 		}
 
 		const previousConfig = current;
 		const nextConfig = result.config;
 		if (!configWritable) {
-			ctx.ui.notify("pi-glance-tps configuration save blocked to protect the existing file; fix or remove it, then /reload", "error");
+			ctx.ui.notify("配置文件存在问题时不会覆盖保存；请先修复或删除该文件，然后 /reload", "error");
 			return;
 		}
 		try {
 			await adapters.saveConfig(nextConfig);
 		} catch {
-			ctx.ui.notify("pi-glance-tps configuration save failed; keeping previous configuration", "error");
+			ctx.ui.notify("配置保存失败，继续使用原有配置", "error");
 			return;
 		}
 
@@ -404,14 +404,14 @@ export function createGlanceTpsRuntime(adapters: GlanceTpsRuntimeAdapters): Glan
 					? () => installInputSurface(ctx)
 					: () => deactivateInputSurface(ctx),
 		);
-		ctx.ui.notify("pi-glance-tps configuration saved", "info");
+		ctx.ui.notify("pi-glance-tps 配置已保存", "info");
 	}
 
 	return {
 		commands: {
 			openPane: async (_args, ctx) => {
 				if (!isTuiMode(ctx)) {
-					ctx.ui.notify("pi-glance-tps configuration pane requires TUI mode", "error");
+					ctx.ui.notify("pi-glance-tps 设置面板需要在 TUI 模式下使用", "error");
 					return;
 				}
 				// The pane owns the screen while it is open: pause the speed spinner so
@@ -439,7 +439,7 @@ export function createGlanceTpsRuntime(adapters: GlanceTpsRuntimeAdapters): Glan
 							if (persistent) adapters.saveDraft!(sessionId, text);
 						});
 					} catch {
-						ctx.ui.notify("Could not read the saved draft. Stash is unavailable until /reload; the file was kept.", "warning");
+						ctx.ui.notify("无法读取已保存的草稿，/reload 之前暂存功能不可用；原文件已保留。", "warning");
 					}
 				}
 				acceptConfigLoad(adapters.loadConfigSync());

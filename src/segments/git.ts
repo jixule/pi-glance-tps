@@ -64,12 +64,12 @@ export const gitSegmentFeature = {
 	settings: [
 		choiceSetting(
 			"git.changes",
-			"Changes",
-			"Show a marker or a compact change summary. Conflicts stay visible.",
+			"变更",
+			"显示标记或紧凑的变更摘要，冲突始终可见。",
 			[
-				{ value: "hidden", label: "Hidden" },
-				{ value: "marker", label: "Marker" },
-				{ value: "summary", label: "Summary" },
+				{ value: "hidden", label: "隐藏" },
+				{ value: "marker", label: "标记" },
+				{ value: "summary", label: "摘要" },
 			],
 			(c) => c.git.changes,
 			(c, v) => {
@@ -78,8 +78,8 @@ export const gitSegmentFeature = {
 		),
 		toggleSetting(
 			"git.aheadBehind",
-			"Ahead / behind",
-			"Show commits ahead of or behind the upstream branch.",
+			"领先 / 落后",
+			"显示相对上游分支的领先或落后提交数。",
 			(c) => c.git.showAheadBehind,
 			(c, v) => {
 				c.git.showAheadBehind = v;
@@ -87,12 +87,12 @@ export const gitSegmentFeature = {
 		),
 		choiceSetting(
 			"git.sha",
-			"Commit ID",
-			"Choose when to show the short commit ID.",
+			"提交 ID",
+			"选择何时显示短提交 ID。",
 			[
-				{ value: "off", label: "Hidden" },
-				{ value: "detached", label: "When detached", hint: "Show when no branch is checked out." },
-				{ value: "always", label: "Always" },
+				{ value: "off", label: "隐藏" },
+				{ value: "detached", label: "分离时", hint: "没有检出分支时显示。" },
+				{ value: "always", label: "总是" },
 			],
 			(c) => c.git.shaMode,
 			(c, v) => {
@@ -100,21 +100,21 @@ export const gitSegmentFeature = {
 			},
 		),
 		toggleSetting(
-			"git.fetch", "Auto fetch",
-			"Refresh the upstream branch every 5 minutes. No sign-in prompts; failures retry later.",
+			"git.fetch", "自动获取",
+			"每 5 分钟刷新上游分支；不会弹出登录提示，失败后会稍后重试。",
 			c => c.git.autoFetch,
 			(c, value) => { c.git.autoFetch = value; },
 		),
 		choiceSetting(
 			"git.polling",
-			"Refresh interval",
-			"How often to check Git changes made outside Pi.",
-			POLL_INTERVALS.map((value) => ({ value, label: `${value / 1000} seconds` })),
+			"刷新间隔",
+			"检查 Pi 之外的 Git 变更的频率。",
+			POLL_INTERVALS.map((value) => ({ value, label: `${value / 1000} 秒` })),
 			(c) => c.git.pollIntervalMs,
 			(c, v) => {
 				c.git.pollIntervalMs = v;
 			},
-			(value) => `${value / 1000} seconds`,
+			(value) => `${value / 1000} 秒`,
 		),
 	],
 	collect: collectGit,

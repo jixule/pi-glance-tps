@@ -189,7 +189,7 @@ function updateNumber(model: PaneModelState, text: string, confirm = false): Pan
 			error: valid
 				? ""
 				: confirm
-					? `Invalid value. ${row.inputHint}`
+					? `输入无效。${row.inputHint}`
 					: text === model.page.text
 						? model.page.error
 						: "",
@@ -311,7 +311,7 @@ export function updatePaneModel(model: PaneModelState, intent: PaneIntent, exten
 	if (intent.type === "shortcut") {
 		if (page.kind !== "shortcut") return { model };
 		const key = normalizeStashShortcut(intent.key);
-		return { model: { ...model, page: { ...page, key: key ?? page.key, error: intent.error ?? (key ? "" : "Use Ctrl, Alt or a function key.") } } };
+		return { model: { ...model, page: { ...page, key: key ?? page.key, error: intent.error ?? (key ? "" : "请使用 Ctrl、Alt 或功能键。") } } };
 	}
 	if (intent.type === "input") return { model: updateNumber(model, intent.text) };
 	if (intent.type === "adjust" && (page.kind === "theme" || page.kind === "choices")) {
@@ -381,43 +381,43 @@ export function createPaneViewModel(model: PaneModelState): GlanceTpsPaneViewMod
 		list = listPage(model),
 		row = selectedRow(model, rows);
 	let title = list.segment
-		? `Status line / ${segmentLabel(list.segment)}`
+		? `状态栏 / ${segmentLabel(list.segment)}`
 		: SETTINGS_SECTIONS.find((section) => section.id === model.section)!.label;
 	let hint = row?.kind === "choice" ? (row.options[row.selectedIndex]?.hint ?? row.hint) : (row?.hint ?? "");
-	if (list.segment && !model.draft.segments.find((segment) => segment.id === list.segment)?.enabled) title += " (Off)";
+	if (list.segment && !model.draft.segments.find((segment) => segment.id === list.segment)?.enabled) title += "（已关闭）";
 	let choices: GlanceTpsPaneViewModel["choices"] = [];
 	let help: HelpShortcut[], actions: HelpShortcut[];
 	if (page.kind === "confirm") {
-		title = page.action === "reset" ? "Reset all settings?" : "Discard unsaved changes?";
+		title = page.action === "reset" ? "重置所有设置？" : "放弃未保存的修改？";
 		hint =
 			page.action === "reset"
-				? "Restore GlanceTps defaults in this preview. Save to apply them."
-				: "Your saved settings will stay unchanged.";
+				? "在此预览中恢复 GlanceTps 默认值，保存后生效。"
+				: "已保存的设置不会改变。";
 		choices = [
-			{ label: "Keep editing", selected: page.index === 0, checked: false },
+			{ label: "继续编辑", selected: page.index === 0, checked: false },
 			{
-				label: page.action === "reset" ? "Reset all settings" : "Discard changes",
+				label: page.action === "reset" ? "重置所有设置" : "放弃修改",
 				selected: page.index === 1,
 				checked: false,
 			},
 		];
-		help = [{ key: "↑↓", label: "Select" }];
+		help = [{ key: "↑↓", label: "选择" }];
 		actions = [
-			{ key: "Enter", label: "Confirm" },
-			{ key: "Esc", label: "Back" },
+			{ key: "Enter", label: "确认" },
+			{ key: "Esc", label: "返回" },
 		];
 	} else if (page.kind === "shortcut") {
-		title = `Stash shortcut · ${shortcutLabel(page.key)}`;
-		hint = page.error || "Press a shortcut, then Enter to confirm. Esc keeps the previous key.";
+		title = `暂存快捷键 · ${shortcutLabel(page.key)}`;
+		hint = page.error || "按下快捷键后按 Enter 确认，Esc 保留原快捷键。";
 		help = [];
-		actions = [{ key: "Enter", label: "Confirm" }, { key: "Esc", label: "Cancel" }];
+		actions = [{ key: "Enter", label: "确认" }, { key: "Esc", label: "取消" }];
 	} else if (page.kind === "number") {
-		title = row?.label ?? "Sweep speed";
-		hint = page.error || (row?.kind === "number" ? row.inputHint : "Enter a number.");
+		title = row?.label ?? "扫光速度";
+		hint = page.error || (row?.kind === "number" ? row.inputHint : "请输入数字。");
 		help = [];
 		actions = [
-			{ key: "Enter", label: "Confirm" },
-			{ key: "Esc", label: "Cancel" },
+			{ key: "Enter", label: "确认" },
+			{ key: "Esc", label: "取消" },
 		];
 	} else if (page.kind === "theme" || page.kind === "choices") {
 		title = row?.label ?? title;
@@ -440,7 +440,7 @@ export function createPaneViewModel(model: PaneModelState): GlanceTpsPaneViewMod
 				}));
 				if (previous.selectedIndex < 0)
 					choices.push({
-						label: `${previous.value} (current)`,
+						label: `${previous.value}（当前）`,
 						selected: page.index === previous.options.length,
 						checked: true,
 					});
@@ -448,41 +448,41 @@ export function createPaneViewModel(model: PaneModelState): GlanceTpsPaneViewMod
 			}
 		}
 		help = [
-			{ key: "↑↓", label: "Preview" },
-			{ key: "←→", label: "Prev / next" },
+			{ key: "↑↓", label: "预览" },
+			{ key: "←→", label: "上一个 / 下一个" },
 		];
 		actions = [
-			{ key: "Enter", label: "Confirm" },
-			{ key: "Esc", label: "Cancel" },
+			{ key: "Enter", label: "确认" },
+			{ key: "Esc", label: "取消" },
 		];
 	} else if (page.kind === "list" && page.segment === "extensions") {
-		hint = "Live, read-only setStatus() output. Published text may be hidden above when space is limited.";
-		help = [{ key: "Tab/Shift+Tab", label: "Section" }, { key: "↑↓", label: "Scroll" }, { key: "D", label: "Preview layout" }];
-		actions = [{ key: "S", label: "Save & close" }, { key: "Esc", label: "Back" }, { key: "R", label: "Reset" }];
+		hint = "实时、只读的 setStatus() 输出；空间不足时上方发布的内容可能被隐藏。";
+		help = [{ key: "Tab/Shift+Tab", label: "分区" }, { key: "↑↓", label: "滚动" }, { key: "D", label: "预览布局" }];
+		actions = [{ key: "S", label: "保存并关闭" }, { key: "Esc", label: "返回" }, { key: "R", label: "重置" }];
 	} else {
 		help = [
-			{ key: "Tab/Shift+Tab", label: "Section" },
-			{ key: "↑↓", label: "Select" },
+			{ key: "Tab/Shift+Tab", label: "分区" },
+			{ key: "↑↓", label: "选择" },
 			{
 				key: "←→",
 				label:
 					row?.kind === "segment" || row?.kind === "toggle"
-						? "Off / on"
+						? "关 / 开"
 						: row?.kind === "number"
-							? "Slower / faster"
-							: "Prev / next",
+							? "更慢 / 更快"
+							: "上一个 / 下一个",
 			},
-			{ key: "Enter", label: row?.kind === "segment" ? "Details" : row?.kind === "toggle" ? "Toggle" : "Edit" },
+			{ key: "Enter", label: row?.kind === "segment" ? "详情" : row?.kind === "toggle" ? "切换" : "编辑" },
 		];
 		if (row?.kind === "shortcut") help = help.filter(item => item.key !== "←→");
-		if (row?.kind === "segment" || row?.kind === "toggle") help.push({ key: "Space", label: "Toggle" });
-		if (row?.kind === "segment") help.push({ key: "J/K", label: "Reorder" });
-		if (model.section === "status") help.push({ key: "D", label: "Preview layout" });
-		if (model.section === "working") help.push({ key: "P", label: "Preview state" });
+		if (row?.kind === "segment" || row?.kind === "toggle") help.push({ key: "Space", label: "切换" });
+		if (row?.kind === "segment") help.push({ key: "J/K", label: "调整顺序" });
+		if (model.section === "status") help.push({ key: "D", label: "预览布局" });
+		if (model.section === "working") help.push({ key: "P", label: "预览状态" });
 		actions = [
-			{ key: "S", label: "Save & close" },
-			{ key: "Esc", label: list.segment ? "Back" : "Close" },
-			{ key: "R", label: "Reset" },
+			{ key: "S", label: "保存并关闭" },
+			{ key: "Esc", label: list.segment ? "返回" : "关闭" },
+			{ key: "R", label: "重置" },
 		];
 	}
 	const original = getSettingsRows(model.initial, model.section, list.segment);
@@ -491,7 +491,7 @@ export function createPaneViewModel(model: PaneModelState): GlanceTpsPaneViewMod
 		title,
 		page: page.kind,
 		dirty: paneIsDirty(model),
-		hint: row?.inactive ? `Used in Sweep mode. ${hint}` : hint,
+		hint: row?.inactive ? `仅在 Sweep 模式下生效。${hint}` : hint,
 		extensionStatusIndex: page.kind === "list" && page.segment === "extensions" ? page.index : undefined,
 		choices,
 		help,

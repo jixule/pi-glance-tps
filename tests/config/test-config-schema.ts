@@ -29,9 +29,9 @@ assert.equal(normalizeConfig({ throughput: { precision: "manual" } }).throughput
 const precisionSetting = throughputSegmentFeature.settings.find((setting) => setting.id === "throughput.precision");
 assert.ok(precisionSetting, "Live speed feature should expose its precision setting");
 const config = defaultConfig();
-assert.equal(precisionSetting.value(config), "Automatic", "setting uses a readable automatic label");
+assert.equal(precisionSetting.value(config), "自动", "setting uses a readable automatic label");
 precisionSetting.select(config, 1);
 assert.equal(config.throughput.precision, 1, "setting can choose precision directly");
-assert.equal(precisionSetting.value(config), "1 decimal", "setting label follows the selected precision");
+assert.equal(precisionSetting.value(config), "1 位小数", "setting label follows the selected precision");
 
 console.log("✓ config schema descriptor behavior checks passed");

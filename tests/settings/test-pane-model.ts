@@ -27,17 +27,17 @@ test("first row edits immediately; source config and loaded-key order never crea
 
 test("four sections keep their selected row and expose only task-relevant controls", () => {
 	let model = down(createPaneModel(defaultConfig()), 3);
-	assert.equal(selected(model).label, "Icons");
+	assert.equal(selected(model).label, "图标");
 	model = section(model);
-	assert.deepEqual(createPaneViewModel(model).rows.map(row => row.label), ["Git", "Cost", "Live speed", "Context", "Tokens", "Extensions", "Model"]);
+	assert.deepEqual(createPaneViewModel(model).rows.map(row => row.label), ["Git", "费用", "实时速度", "上下文", "Tokens", "Extensions", "模型"]);
 	model = section(model);
-	assert.deepEqual(createPaneViewModel(model).rows.map(row => row.label), ["Display mode", "Effect area", "Sweep speed", "Effect color", "Compaction / summary speed", "Retry blink rate"]);
+	assert.deepEqual(createPaneViewModel(model).rows.map(row => row.label), ["显示方式", "动效范围", "扫光速度", "动效颜色", "压缩 / 摘要速度", "重试闪烁频率"]);
 	assert.equal(createPaneViewModel(model).preview.activity, "working");
 	model = section(model);
 	assert.equal(model.section, "input");
 	assert.equal(createPaneViewModel(model).preview.activity, undefined);
 	model = section(model);
-	assert.equal(selected(model).label, "Icons");
+	assert.equal(selected(model).label, "图标");
 	assert.equal(createPaneViewModel(model).preview.activity, undefined);
 	assert.equal(selected(step(model, { type: "move", direction: "up", amount: 3 })).label, "GlanceTps");
 });
@@ -50,7 +50,7 @@ test("status visibility, order and detail navigation are separate actions", () =
 	assert.equal(selected(model).label, "Git");
 	assert.deepEqual(model.draft.segments.slice(0, 2).map(s => s.id), ["cost", "git"]);
 	model = step(model, { type: "activate" });
-	assert.equal(createPaneViewModel(model).title, "Status line / Git (Off)");
+	assert.equal(createPaneViewModel(model).title, "状态栏 / Git（已关闭）");
 	assert.equal(createPaneViewModel(model).rows.some(row => row.label === "Enabled"), false);
 	const detailed = step(step(step(model, { type: "activate" }), { type: "adjust", direction: -1 }), { type: "activate" });
 	assert.equal(detailed.draft.git.changes, "marker");
@@ -69,7 +69,7 @@ test("choice list exposes every option, previews and restores only the edited va
 	model = step(model, { type: "move", direction: "up" });
 	const before = model.draft;
 	model = step(model, { type: "activate" });
-	assert.deepEqual(createPaneViewModel(model).choices.map(c => c.label), ["Full border", "Top edge"]);
+	assert.deepEqual(createPaneViewModel(model).choices.map(c => c.label), ["整圈边框", "顶边"]);
 	model = down(model);
 	assert.equal(model.draft.editor.workingSweep, "top");
 	assert.deepEqual(step(model, { type: "back" }).draft, before);
@@ -92,7 +92,7 @@ for (const slot of ["light", "dark"] as const) test(`${slot} palette preview, ac
 	const preview = model.draft.theme[slot];
 	const restored = step(model, { type: "back" });
 	assert.equal(paneIsDirty(restored), false);
-	assert.equal(selected(restored).label, slot === "light" ? "Light palette" : "Dark palette");
+	assert.equal(selected(restored).label, slot === "light" ? "浅色主题" : "深色主题");
 	assert.equal(step(model, { type: "activate" }).draft.theme[slot], preview);
 	const saved = updatePaneModel(step(model, { type: "activate" }), { type: "save" });
 	assert.equal(saved.completion?.action, "save");
@@ -101,7 +101,7 @@ for (const slot of ["light", "dark"] as const) test(`${slot} palette preview, ac
 
 test("speed supports one-column steps, direct input, strict validation and restore", () => {
 	let model = down(section(section(createPaneModel(defaultConfig()))), 2);
-	assert.equal(selected(model).value, "47 cols/s");
+	assert.equal(selected(model).value, "47 列/秒");
 	model = step(model, { type: "adjust", direction: -1 });
 	assert.equal(model.draft.editor.workingSweepSpeed, 46);
 	model = step(model, { type: "activate" });
@@ -110,7 +110,7 @@ test("speed supports one-column steps, direct input, strict validation and resto
 		assert.equal(invalid.draft.editor.workingSweepSpeed, 46);
 		const rejected = step(invalid, { type: "activate" });
 		assert.equal(rejected.page.kind, "number");
-		if (rejected.page.kind === "number") assert.match(rejected.page.error, /whole number/);
+		if (rejected.page.kind === "number") assert.match(rejected.page.error, /整数/);
 		assert.equal(updatePaneModel(invalid, { type: "save" }).completion, undefined);
 	}
 	const valid = step(model, { type: "input", text: "85" });
@@ -130,7 +130,7 @@ test("reset and dirty exit require confirmation, default to keep editing, and ne
 	for (const type of ["back", "reset"] as const) {
 		let confirmation = step(dirty, { type });
 		assert.equal(confirmation.page.kind, "confirm");
-		assert.equal(createPaneViewModel(confirmation).choices.find(c => c.selected)!.label, "Keep editing");
+		assert.equal(createPaneViewModel(confirmation).choices.find(c => c.selected)!.label, "继续编辑");
 		assert.deepEqual(step(confirmation, { type: "activate" }).draft, dirty.draft);
 		assert.deepEqual(step(confirmation, { type: "back" }).draft, dirty.draft);
 		confirmation = down(confirmation);

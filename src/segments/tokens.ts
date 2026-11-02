@@ -64,11 +64,11 @@ export const tokensSegmentFeature = {
 	settings: [
 		choiceSetting(
 			"tokens.display",
-			"Show",
-			"Session input and output token counts.",
+			"显示",
+			"本次会话的输入与输出 token 数。",
 			[
-				{ value: "input-output", label: "Input + output" },
-				{ value: "total", label: "Combined total" },
+				{ value: "input-output", label: "输入 + 输出" },
+				{ value: "total", label: "输入输出合计" },
 			],
 			(c) => c.tokens.display,
 			(c, v) => {
@@ -77,12 +77,12 @@ export const tokensSegmentFeature = {
 		),
 		choiceSetting(
 			"tokens.cache",
-			"Cache details",
-			"Choose which prompt-cache information to show.",
+			"缓存详情",
+			"选择要显示的提示词缓存信息。",
 			[
-				{ value: "rate", label: "Hit rate" },
-				{ value: "read-write", label: "Read / write tokens" },
-				{ value: "hide", label: "Hidden" },
+				{ value: "rate", label: "命中率" },
+				{ value: "read-write", label: "读 / 写 tokens" },
+				{ value: "hide", label: "隐藏" },
 			],
 			(c) => c.tokens.cache,
 			(c, v) => {

@@ -33,7 +33,7 @@ export function createConfigStore(configPath: string) {
 				config: defaultConfig(),
 				status: "invalid",
 				writable: false,
-				diagnostic: `pi-glance-tps configuration is invalid; using defaults and blocking saves until ${configPath} is fixed or removed (${errorMessage(error)})`,
+				diagnostic: `pi-glance-tps 配置无效；在修复或删除 ${configPath} 之前使用默认值并禁止保存（${errorMessage(error)}）`,
 			};
 		}
 
@@ -42,7 +42,7 @@ export function createConfigStore(configPath: string) {
 				config: defaultConfig(),
 				status: "invalid",
 				writable: false,
-				diagnostic: `pi-glance-tps configuration must be a JSON object; using defaults and blocking saves until ${configPath} is fixed or removed`,
+				diagnostic: `pi-glance-tps 配置必须是 JSON 对象；在修复或删除 ${configPath} 之前使用默认值并禁止保存`,
 			};
 		}
 
@@ -52,7 +52,7 @@ export function createConfigStore(configPath: string) {
 				config: normalizeConfig(raw),
 				status: "future",
 				writable: false,
-				diagnostic: `pi-glance-tps configuration version ${rawVersion} is newer than supported version ${CONFIG_VERSION}; using known fields without overwriting the file`,
+				diagnostic: `pi-glance-tps 配置版本 ${rawVersion} 高于支持的版本 ${CONFIG_VERSION}；仅使用已知字段，不会覆盖该文件`,
 			};
 		}
 
@@ -65,7 +65,7 @@ export function createConfigStore(configPath: string) {
 			config: defaultConfig(),
 			status: "unreadable",
 			writable: false,
-			diagnostic: `pi-glance-tps configuration could not be read; using defaults and blocking saves until ${configPath} is accessible (${errorMessage(error)})`,
+			diagnostic: `pi-glance-tps 配置读取失败；在 ${configPath} 可访问之前使用默认值并禁止保存（${errorMessage(error)}）`,
 		};
 	}
 

@@ -51,17 +51,17 @@ function collectModel(ctx: SegmentRenderContext): SegmentData | undefined {
 
 export const modelSegmentFeature = {
 	id: "model",
-	label: "Model",
+	label: "模型",
 	defaultEnabled: true,
 	settings: [
 		choiceSetting(
 			"model.providerLabel",
-			"Provider name",
-			"Show the provider alongside the model name.",
+			"提供商名称",
+			"在模型名旁显示提供商。",
 			[
-				{ value: "auto", label: "Automatic", hint: "Only when useful and there is room." },
-				{ value: "always", label: "Always" },
-				{ value: "never", label: "Never" },
+				{ value: "auto", label: "自动", hint: "仅在有用且有足够空间时显示。" },
+				{ value: "always", label: "总是" },
+				{ value: "never", label: "从不" },
 			],
 			(c) => c.display.showProvider,
 			(c, v) => {
@@ -70,10 +70,10 @@ export const modelSegmentFeature = {
 		),
 		choiceSetting(
 			"model.thinkingLabel",
-			"Thinking level",
-			"Show the model's current thinking level.",
+			"思考级别",
+			"显示模型当前的思考级别。",
 			[
-				{ value: "auto", label: "Automatic", hint: "Hide when off or space is limited." },
+				{ value: "auto", label: "自动", hint: "关闭或空间不足时隐藏。" },
 				{ value: "always", label: "Always" },
 				{ value: "never", label: "Never" },
 			],

@@ -218,7 +218,7 @@ export class GlanceTpsConfigPane implements Component, Focusable {
 		if (this.model.page.kind === "shortcut" && (this.shortcutPasting || data.includes("\x1b[200~"))) {
 			this.shortcutPasting = true;
 			const end = data.indexOf("\x1b[201~");
-			this.dispatch({ type: "shortcut", error: "Press a shortcut; pasted text cannot be bound." });
+			this.dispatch({ type: "shortcut", error: "请按下快捷键；粘贴的文本无法绑定。" });
 			if (end >= 0) {
 				this.shortcutPasting = false;
 				if (end + 6 < data.length) this.handleInput(data.slice(end + 6));
@@ -236,7 +236,7 @@ export class GlanceTpsConfigPane implements Component, Focusable {
 				const key = normalizeStashShortcut(parseKey(data));
 				const getEffectiveConfig = this.keybindings?.getEffectiveConfig;
 				const conflict = key && getEffectiveConfig ? shortcutConflict(data, key, { getEffectiveConfig: () => getEffectiveConfig.call(this.keybindings) }) : undefined;
-				this.dispatch({ type: "shortcut", key, error: conflict ? `Used by Pi: ${conflict}. Choose another shortcut.` : undefined });
+				this.dispatch({ type: "shortcut", key, error: conflict ? `已被 Pi 占用：${conflict}。请换一个快捷键。` : undefined });
 			}
 			return;
 		}
@@ -281,10 +281,10 @@ export class GlanceTpsConfigPane implements Component, Focusable {
 		const scene = view.preview.activity;
 		const cancelKey = this.keybindings?.getKeys?.("app.interrupt")?.[0] ?? "escape";
 		const cancel = cancelKey === "escape" ? "esc" : cancelKey;
-		const labels = { working: "Working", compaction: "Compacting", branchSummary: "Summarizing", retry: "Retrying", idle: "Idle with draft" };
+		const labels = { working: "工作中", compaction: "压缩上下文中", branchSummary: "生成分支摘要中", retry: "重试中", idle: "空闲（有草稿）" };
 		const messages = {
-			working: "◌ Working...", compaction: `◌ Compacting context... (${cancel} to cancel)`,
-			branchSummary: `◌ Summarizing branch... (${cancel} to cancel)`, retry: `◌ Retrying (2/3) in 8s... (${cancel} to cancel)`,
+			working: "◌ 工作中…", compaction: `◌ 压缩上下文中…（${cancel} 取消）`,
+			branchSummary: `◌ 生成分支摘要中…（${cancel} 取消）`, retry: `◌ 正在重试（2/3），8 秒后…（${cancel} 取消）`,
 		};
 		const options = {
 			...this.options.renderStyleContext,
@@ -294,19 +294,20 @@ export class GlanceTpsConfigPane implements Component, Focusable {
 			activity: scene && scene !== "idle" ? { kind: scene, render: () => messages[scene] } : undefined,
 			animation: this.clock.frame(),
 			hasDraft: scene !== undefined,
-			contentLines: ["Your next prompt…"],
+			contentLines: ["输入下一条指令…"],
 			focused: true,
 		};
 		const preview = this.renderSurface(config, width, options);
 		if (!config.enabled)
-			return fitRows(["Preview · GlanceTps is off", "Turn GlanceTps on to preview the editor."]
+			return fitRows(["预览 · GlanceTps 已关闭", "开启 GlanceTps 后可预览输入框。"]
 				.map(text => this.fg("dim", truncateStyledText(text, width))), preview.length + 1);
-		const densityLabel = view.preview.density[0]!.toUpperCase() + view.preview.density.slice(1);
+		const densityLabels = { auto: "自动", full: "完整", compact: "紧凑", minimal: "极简" } as const;
+		const densityLabel = densityLabels[view.preview.density];
 		const motion = activityMotion(config, scene === "idle" ? undefined : scene);
-		const rate = motion ? motion.kind === "sweep" ? ` · ${Number(motion.rate.toFixed(2))} cols/s` : ` · ${motion.rate.toFixed(2)} Hz` : "";
+		const rate = motion ? motion.kind === "sweep" ? ` · ${Number(motion.rate.toFixed(2))} 列/秒` : ` · ${motion.rate.toFixed(2)} Hz` : "";
 		const label = scene
-			? `Preview · Example · ${config.editor.activityMode === "text" ? "Text" : "Sweep"} · ${labels[scene]}${rate}`
-			: view.section === "status" ? `Preview · ${densityLabel}` : "Preview";
+			? `预览 · 示例 · ${config.editor.activityMode === "text" ? "Text" : "Sweep"} · ${labels[scene]}${rate}`
+			: view.section === "status" ? `预览 · ${densityLabel}` : "预览";
 		return [this.fg("dim", truncateStyledText(label, width)), ...preview];
 	}
 	private renderRow(row: GlanceTpsPaneViewModel["rows"][number], width: number): string {
@@ -316,7 +317,7 @@ export class GlanceTpsConfigPane implements Component, Focusable {
 				? `‹ ${row.value} ›`
 				: row.value + (row.kind === "theme" || row.kind === "choice" || row.kind === "segment" || row.kind === "shortcut" ? "  ›" : "");
 		const left = mark + row.label + (row.changed ? " *" : "");
-		const tone = row.selected ? "accent" : row.inactive || row.value === "Off" ? "dim" : "muted";
+		const tone = row.selected ? "accent" : row.inactive || row.value === "关" ? "dim" : "muted";
 		const rendered = this.fg(tone, spread(left, value, width));
 		return row.selected ? (this.theme.bg?.("selectedBg", rendered) ?? rendered) : rendered;
 	}
@@ -340,7 +341,7 @@ export class GlanceTpsConfigPane implements Component, Focusable {
 		const header = [
 			spread(
 				this.fg("accent", "◌ GlanceTps"),
-				this.fg(view.dirty ? "warning" : "dim", view.dirty ? "Unsaved changes" : "No changes"),
+				this.fg(view.dirty ? "warning" : "dim", view.dirty ? "未保存的修改" : "无修改"),
 				width,
 			),
 			tabs,
@@ -376,7 +377,7 @@ export class GlanceTpsConfigPane implements Component, Focusable {
 		const body: string[] = [];
 		if (details) {
 			if (details.length === 0) body.push(this.fg("dim", statusSource === undefined
-				? "Extension status source is not attached." : "No extension statuses published."));
+				? "扩展状态数据源未连接。" : "暂无扩展发布的状态。"));
 			const count = Math.max(1, Math.min(LIST_ROWS, budget - (details.length > budget ? 1 : 0)));
 			this.pageSize = count;
 			const selected = Math.min(view.extensionStatusIndex!, Math.max(0, details.length - 1));
