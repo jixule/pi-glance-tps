@@ -939,9 +939,9 @@ await test("enabled->disabled active config should remain enabled while disk sav
 	await harness.runtime.commands.openPane("", test.ctx);
 
 	assert.deepEqual(harness.savedConfigs, [nextConfig], "enabled->disabled success should persist the disabled config");
-	assert.deepEqual(test.surfaceCalls.slice(surfaceBaseline), ["setEditorComponent:clear", "setFooter:clear"], "enabled->disabled success should clear the TUI input surface after disk save succeeds");
+	assert.deepEqual(test.surfaceCalls.slice(surfaceBaseline), ["setFooter:clear"], "enabled->disabled success should stop owning the footer while keeping the editor mounted");
 	assert.equal(git.disposeCount, 1, "enabled->disabled success should dispose the active git refresher");
-	assert.equal(test.getRenderRequests(), renderBaseline, "enabled->disabled success should not render through the cleared surface");
+	assert.equal(test.getRenderRequests(), renderBaseline, "enabled->disabled success should not render through the retired surface");
 
 	await harness.runtime.commands.openPane("", test.ctx);
 	assert.deepEqual(harness.showPaneInitials[1], nextConfig, "after enabled->disabled save, later pane opens should receive disabled active config");
@@ -1085,7 +1085,7 @@ await test("initial install should register one editor factory", async () => {
 	assert.equal(editorRenders, 3, "existing editor owner should keep receiving renders after enabled save");
 });
 
-await test("latest initial editor factory should own render before disabled clear", async () => {
+await test("disabled save should keep the editor mounted while dropping footer ownership", async () => {
 	const initialConfig = defaultConfig();
 	const nextConfig = disabledConfig(initialConfig);
 	const git = createGitHarness();
@@ -1105,14 +1105,12 @@ await test("latest initial editor factory should own render before disabled clea
 	assert.equal(staleEditorRenders, 1, "latest initial editor factory should own render before disabled clear");
 
 	await harness.runtime.commands.openPane("", test.ctx);
-	assert.equal(staleFooterRenders, 0, "disabled clear should not use older footer render callback during post-save render");
-	assert.equal(staleEditorRenders, 1, "disabled clear should remove latest editor render callback before post-save render");
+	assert.ok(staleEditorRenders >= 1, "disabled save should keep the editor mounted so Pi still renders an input line");
+	const footerRendersAfterSave = staleFooterRenders;
 
 	invokeFooterFactory(test, 0, () => staleFooterRenders++);
-	invokeEditorFactory(test, 0, () => staleEditorRenders++);
-	git.options?.onSnapshot("/repo", gitSnapshot("after-disabled-clear"));
-	assert.equal(staleFooterRenders, 0, "stale footer factory should not revive render ownership after disabled clear");
-	assert.equal(staleEditorRenders, 1, "stale editor factory should not revive render ownership after disabled clear");
+	git.options?.onSnapshot("/repo", gitSnapshot("after-disabled-save"));
+	assert.equal(staleFooterRenders, footerRendersAfterSave, "a stale footer factory should not revive render ownership after a disabled save");
 });
 
 await test("latest initial editor factory should own render before shutdown", async () => {

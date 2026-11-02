@@ -141,8 +141,8 @@ async function main(): Promise<void> {
 		assert.equal(hasNotification(test.notifications, "pi-glance-tps configuration saved", "info"), true, "successful save should notify success");
 		assert.deepEqual(
 			test.surfaceCalls.slice(successBaseline),
-			["setEditorComponent:clear", "setFooter:clear"],
-			"successful save of disabled config should clear the custom input surface after disk write succeeds",
+			["setFooter:clear"],
+			"successful save of disabled config should stop owning the footer while keeping the editor mounted after disk write succeeds",
 		);
 
 		await rm(configDir, { recursive: true, force: true });

@@ -283,6 +283,27 @@ export function createGlanceTpsRuntime(adapters: GlanceTpsRuntimeAdapters): Glan
 		if (hadFooter) ctx.ui.setFooter(undefined);
 	}
 
+	/**
+	 * Turning the surface off in place keeps the installed editor and lets it
+	 * render Pi's native editor (`render` falls back to `super.render`). Pi can
+	 * report a wrapped editor factory, in which case uninstalling the editor
+	 * leaves no input line at all, so removing it is not reliable.
+	 */
+	function deactivateInputSurface(ctx: ExtensionContext): void {
+		if (!isTuiMode(ctx)) return;
+		stopSpeedFrameTimer();
+		clearGitRefresher();
+		extensionStatusProvider = undefined;
+		// Retire the footer and its render callback, but keep the mounted editor:
+		// Pi can report a wrapped factory, and then uninstalling it removes the
+		// input line entirely. The editor now renders Pi's native editor.
+		const hadOwnFooter = footer !== undefined;
+		clearFooter();
+		uiGeneration++;
+		requestRender = undefined;
+		if (hadOwnFooter) ctx.ui.setFooter(undefined);
+	}
+
 	function installInputSurface(ctx: ExtensionContext): void {
 		if (!isTuiMode(ctx)) return;
 		const initialState = refreshSession.ensureState(ctx);
@@ -377,7 +398,11 @@ export function createGlanceTpsRuntime(adapters: GlanceTpsRuntimeAdapters): Glan
 		}
 		await refreshSession.configSaved(
 			ctx,
-			previousConfig.enabled === nextConfig.enabled ? undefined : () => installInputSurface(ctx),
+			previousConfig.enabled === nextConfig.enabled
+				? undefined
+				: nextConfig.enabled
+					? () => installInputSurface(ctx)
+					: () => deactivateInputSurface(ctx),
 		);
 		ctx.ui.notify("pi-glance-tps configuration saved", "info");
 	}

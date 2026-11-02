@@ -189,7 +189,9 @@ The segment renders `⠇ 168.8 t/s` while generating and `✓ 168.8 t/s` afterwa
 
 Pi exposes one custom-editor factory slot.
 
-When pi-glance-tps installs its editor it records the previous factory. On disable or shutdown it restores that factory only if Pi still reports pi-glance-tps's own factory as current. If another extension has taken ownership, pi-glance-tps leaves it untouched.
+When pi-glance-tps installs its editor it records the previous factory. Shutdown restores that factory when Pi still reports pi-glance-tps's own factory as current, or when the editor was painted recently, which proves Pi is still rendering it even if it reports a wrapped factory. If another extension has taken ownership, pi-glance-tps leaves it untouched.
+
+Disabling in the settings pane does not uninstall the editor. Pi can report a wrapped editor factory, and restoring after uninstalling then leaves no input line at all, so the mounted editor stays and renders Pi's native editor through its `config.enabled === false` fallback. Disable retires the footer, the render callback and the Git refresher, and never replaces a footer another extension owns.
 
 An enabled-to-enabled config save does not reinstall the editor or footer, preserving the live editor instance and Pi-owned editing state. Pi disposes the GlanceTps footer when another extension replaces it; that notification detaches the status source and releases ownership. Disable and shutdown only restore the built-in footer while GlanceTps still owns the slot. Disabled startup leaves both editor and footer slots untouched.
 
