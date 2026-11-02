@@ -65,6 +65,8 @@ export class GlanceTpsEditor extends CustomEditor {
 	private activityIndicator: Parameters<CustomEditor["setWorkingStatusIndicator"]>[0];
 	private readonly statusLine = new GlanceTpsLineRenderer();
 	private pasting = false;
+	/** Last time Pi actually painted this editor; used to detect wrapped factories. */
+	lastRenderedAt = 0;
 
 	constructor(
 		tui: TUI,
@@ -141,6 +143,7 @@ export class GlanceTpsEditor extends CustomEditor {
 	}
 
 	render(width: number): string[] {
+		this.lastRenderedAt = Date.now();
 		const config = this.getConfig();
 		if (!config.enabled) {
 			return super.render(width);

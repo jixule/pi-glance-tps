@@ -258,22 +258,28 @@ export function createGlanceTpsRuntime(adapters: GlanceTpsRuntimeAdapters): Glan
 		if (immediate) refresher.schedule(true);
 	}
 
-	function restoreOwnedEditor(ctx: ExtensionContext): void {
+	function restoreOwnedEditor(ctx: ExtensionContext, stillRendering = false): void {
 		const ownedFactory = ownedEditorFactory;
 		if (!ownedFactory) return;
 		const restoreFactory = previousEditorFactory;
 		ownedEditorFactory = undefined;
 		previousEditorFactory = undefined;
-		if (ctx.ui.getEditorComponent() === ownedFactory) ctx.ui.setEditorComponent(restoreFactory);
+		const current = ctx.ui.getEditorComponent();
+		// Pi can report a wrapped factory after `setEditorComponent`, so an identity
+		// mismatch alone must not skip restoration: that leaves no input line at all.
+		// Restore when Pi still reports our factory, or when our editor was painted
+		// recently, which proves Pi is still rendering it.
+		if (current === ownedFactory || stillRendering) ctx.ui.setEditorComponent(restoreFactory);
 	}
 
 	function clearUI(ctx: ExtensionContext): void {
 		if (!isTuiMode(ctx)) return;
 		stopSpeedFrameTimer();
 		const hadFooter = footer !== undefined;
+		const editorWasRendering = activeEditor !== undefined && Date.now() - activeEditor.lastRenderedAt < 5_000;
 		invalidateUiOwnership();
 		clearGitRefresher();
-		restoreOwnedEditor(ctx);
+		restoreOwnedEditor(ctx, editorWasRendering);
 		if (hadFooter) ctx.ui.setFooter(undefined);
 	}
 
