@@ -18,7 +18,7 @@ test("npm package includes the complete source tree and excludes development fil
 	const { stdout } = await promisify(execFile)("npm", ["pack", "--dry-run", "--json", "--ignore-scripts"], { maxBuffer: 1024 * 1024, timeout: 120_000 });
 	const [pack] = JSON.parse(stdout) as PackResult[];
 	assert.ok(pack);
-	assert.equal(pack.name, "pi-glance");
+	assert.equal(pack.name, "pi-glance-tps");
 	assert.equal(pack.version, manifest.version);
 	assert.deepEqual(manifest.pi.extensions, ["./index.ts"], "Pi entry point remains stable");
 	assert.equal(Object.keys(manifest.dependencies ?? {}).length, 0, "no bundled runtime dependencies");
@@ -36,14 +36,14 @@ test("release version, lockfile and checked-in notes agree", async () => {
 	const notesFile = `v${manifest.version}.md`;
 	assert.deepEqual(await readdir(".github/release-notes"), [notesFile]);
 	const notes = await readFile(join(".github/release-notes", notesFile), "utf8");
-	assert.ok(notes.startsWith(`# pi-glance ${manifest.version}\n`));
+	assert.ok(notes.startsWith(`# pi-glance-tps ${manifest.version}\n`));
 	assert.ok(notes.length < 1500, "release notes should stay short");
 });
 
 test("developer clean removes only generated test output and can run twice", async () => {
 	const manifest = JSON.parse(await readFile("package.json", "utf8"));
 	assert.equal(typeof manifest.scripts.clean, "string", "provide an explicit build-output cleanup command");
-	const root = await mkdtemp(join(tmpdir(), "pi-glance-clean-"));
+	const root = await mkdtemp(join(tmpdir(), "pi-glance-tps-clean-"));
 	try {
 		await writeFile(join(root, "package.json"), JSON.stringify({ private: true, scripts: { clean: manifest.scripts.clean } }));
 		await mkdir(join(root, ".tmp-test", "nested"), { recursive: true });

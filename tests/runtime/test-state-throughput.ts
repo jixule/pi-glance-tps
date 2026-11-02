@@ -4,9 +4,9 @@ import { createInitialState, setLastRunModelSpeed, setCurrentRunModelSpeed, clea
 import type { StateInputs } from "../../src/runtime/snapshot.js";
 import { testState } from "../support/helpers.js";
 
-import type { GlanceState, ModelSpeedMeasurement as ModelSpeedFixture } from "../../src/types.js";
+import type { GlanceTpsState, ModelSpeedMeasurement as ModelSpeedFixture } from "../../src/types.js";
 
-function throughput(state: GlanceState): GlanceState["throughput"] {
+function throughput(state: GlanceTpsState): GlanceTpsState["throughput"] {
 	return state.throughput;
 }
 

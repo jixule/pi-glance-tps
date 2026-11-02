@@ -2,8 +2,8 @@ import { strict as assert } from "node:assert";
 import { test } from "node:test";
 import { stripTerminalSequences } from "@earendil-works/pi-tui";
 import { defaultConfig } from "../../src/config/model.js";
-import { GlanceConfigPane } from "../../src/settings/pane.js";
-import type { GlanceEditor } from "../../src/surface/editor.js";
+import { GlanceTpsConfigPane } from "../../src/settings/pane.js";
+import type { GlanceTpsEditor } from "../../src/surface/editor.js";
 import { createGitHarness, createRuntimeHarness, createRuntimeTestContext, invokeEditorFactory } from "../support/runtime-harness.js";
 
 const assistant = {
@@ -21,7 +21,7 @@ test("Pi's ordinary redraw includes newly persisted warming usage without an age
 	const ctx = createRuntimeTestContext({ entries: [assistant] });
 	const harness = createRuntimeHarness({ loadConfigSyncConfig: config, git: createGitHarness(), showPaneResults: [{ action: "cancel" }] });
 	harness.runtime.events.sessionStart({}, ctx.ctx);
-	const editor = invokeEditorFactory(ctx, 0, () => {}) as GlanceEditor;
+	const editor = invokeEditorFactory(ctx, 0, () => {}) as GlanceTpsEditor;
 	editor.focused = true;
 	editor.setText("draft 中文🙂 tail");
 	const render = () => stripTerminalSequences(editor.render(240).join("\n"));
@@ -43,17 +43,17 @@ test("Pi's ordinary redraw includes newly persisted warming usage without an age
 	assert.equal(state.context.tokens, 42, "context remains Pi's public context usage, not warming's token count");
 });
 
-test("an open settings preview reads new usage even when the Glance editor is disabled", async () => {
+test("an open settings preview reads new usage even when the GlanceTps editor is disabled", async () => {
 	const config = defaultConfig(); config.enabled = false;
 	const ctx = createRuntimeTestContext({ entries: [assistant] });
 	const harness = createRuntimeHarness({ loadConfigSyncConfig: config, git: createGitHarness(), showPaneResults: [{ action: "cancel" }] });
 	harness.runtime.events.sessionStart({}, ctx.ctx);
 	assert.equal(ctx.editorFactories.length, 0);
 	await harness.runtime.commands.openPane("", ctx.ctx);
-	const pane = new GlanceConfigPane(config, { fg: (_tone, text) => text }, () => {}, () => {},
+	const pane = new GlanceTpsConfigPane(config, { fg: (_tone, text) => text }, () => {}, () => {},
 		undefined, () => 40, harness.showPanePreviewStates[0], harness.showPaneOptions[0]);
 	try {
-		pane.handleInput(" "); // Preview turning Glance on without saving it.
+		pane.handleInput(" "); // Preview turning GlanceTps on without saving it.
 		const render = () => stripTerminalSequences(pane.render(240).join("\n"));
 		assert.match(render(), /\$0\.100/);
 		const reads = ctx.getEntryReads();
@@ -69,7 +69,7 @@ test("usage behind later entries is counted once across message events, branch r
 	const ctx = createRuntimeTestContext({ entries: [assistant] });
 	const harness = createRuntimeHarness({ git: createGitHarness(), showPaneResults: [{ action: "cancel" }] });
 	harness.runtime.events.sessionStart({}, ctx.ctx);
-	const editor = invokeEditorFactory(ctx, 0, () => {}) as GlanceEditor;
+	const editor = invokeEditorFactory(ctx, 0, () => {}) as GlanceTpsEditor;
 	await harness.runtime.commands.openPane("", ctx.ctx);
 	const state = harness.showPanePreviewStates[0]!;
 	const system = { type: "message", id: "instructions", parentId: warming.id, message: { role: "system" } };
@@ -93,7 +93,7 @@ test("usage behind later entries is counted once across message events, branch r
 	assert.equal(state.usage.cacheRead, 100_000, "new branches retain billed usage from the abandoned branch");
 	assert.ok(Math.abs(state.usage.cost - 0.38003) < 1e-12);
 	harness.runtime.events.sessionStart({}, ctx.ctx);
-	const reloaded = invokeEditorFactory(ctx, 1, () => {}) as GlanceEditor;
+	const reloaded = invokeEditorFactory(ctx, 1, () => {}) as GlanceTpsEditor;
 	const restoredFrame = stripTerminalSequences(reloaded.render(240).join("\n"));
 	assert.match(restoredFrame, /\$0\.380/);
 	assert.match(restoredFrame, /↓32/);
@@ -110,14 +110,14 @@ test("old editor and preview callbacks never read a retired session or contamina
 	const first = createRuntimeTestContext({ entries: [assistant] });
 	const harness = createRuntimeHarness({ git: createGitHarness(), showPaneResults: [{ action: "cancel" }] });
 	harness.runtime.events.sessionStart({}, first.ctx);
-	const oldEditor = invokeEditorFactory(first, 0, () => {}) as GlanceEditor;
+	const oldEditor = invokeEditorFactory(first, 0, () => {}) as GlanceTpsEditor;
 	await harness.runtime.commands.openPane("", first.ctx);
 	const readOldPreview = harness.showPaneOptions[0]!.getPreviewState!;
 	await harness.runtime.events.sessionShutdown({}, first.ctx);
 	first.ctx.sessionManager.getLeafId = () => { throw new Error("retired session"); };
 	const next = createRuntimeTestContext({ entries: [warming] });
 	harness.runtime.events.sessionStart({}, next.ctx);
-	const editor = invokeEditorFactory(next, 0, () => {}) as GlanceEditor;
+	const editor = invokeEditorFactory(next, 0, () => {}) as GlanceTpsEditor;
 	assert.match(stripTerminalSequences(editor.render(240).join("\n")), /\$0\.015/);
 	assert.match(stripTerminalSequences(oldEditor.render(240).join("\n")), /\$0\.100/);
 	assert.equal(readOldPreview().usage.cost, 0.1);

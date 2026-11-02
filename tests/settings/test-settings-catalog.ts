@@ -8,7 +8,7 @@ test("four sections have stable, user-facing labels and one home for each settin
 	const config = defaultConfig();
 	assert.deepEqual(SETTINGS_SECTIONS.map(s => s.label), ["Appearance", "Status line", "Activity", "Input"]);
 	assert.deepEqual(getSettingsRows(config, "appearance").map(row => [row.label, row.value]), [
-		["Glance", "On"], ["Light palette", "Light"], ["Dark palette", "Dark"], ["Icons", "Nerd Font"],
+		["GlanceTps", "On"], ["Light palette", "Light"], ["Dark palette", "Dark"], ["Icons", "Nerd Font"],
 		["Workspace label", "Smart path"],
 	]);
 	assert.deepEqual(getSettingsRows(config, "input").map(row => [row.label, row.value]), [

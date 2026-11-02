@@ -6,10 +6,10 @@ import {
 	SETTINGS_SECTIONS,
 	type SettingsRow,
 	type SettingsSectionId,
-	type GlanceThemeSlot,
+	type GlanceTpsThemeSlot,
 } from "./catalog.js";
 import { segmentLabel } from "../segments/registry.js";
-import type { ActivityKind, GlanceConfig, SegmentId, WidthMode } from "../types.js";
+import type { ActivityKind, GlanceTpsConfig, SegmentId, WidthMode } from "../types.js";
 
 export type ActivityPreview = ActivityKind | "idle";
 export type PanePreviewDensity = "auto" | WidthMode;
@@ -20,19 +20,19 @@ interface ListPage {
 }
 interface EditorPageBase {
 	parent: ListPage;
-	restore: GlanceConfig;
+	restore: GlanceTpsConfig;
 	rowId: string;
 }
 type EditorPage =
 	| (EditorPageBase & { kind: "choices"; index: number })
-	| (EditorPageBase & { kind: "theme"; index: number; slot: GlanceThemeSlot })
+	| (EditorPageBase & { kind: "theme"; index: number; slot: GlanceTpsThemeSlot })
 	| (EditorPageBase & { kind: "shortcut"; key: string; error: string })
 	| (EditorPageBase & { kind: "number"; text: string; error: string });
 type ContentPage = ListPage | EditorPage;
 type PanePage = ContentPage | { kind: "confirm"; action: "discard" | "reset"; index: number; previous: ContentPage };
 export interface PaneModelState {
-	initial: GlanceConfig;
-	draft: GlanceConfig;
+	initial: GlanceTpsConfig;
+	draft: GlanceTpsConfig;
 	section: SettingsSectionId;
 	sectionPages: Record<SettingsSectionId, ListPage>;
 	detailRows: Partial<Record<SegmentId, number>>;
@@ -40,7 +40,7 @@ export interface PaneModelState {
 	previewDensity: PanePreviewDensity;
 	previewActivity: ActivityPreview;
 }
-export type PaneCompletion = { action: "save"; config: GlanceConfig } | { action: "cancel" };
+export type PaneCompletion = { action: "save"; config: GlanceTpsConfig } | { action: "cancel" };
 export type PaneIntent =
 	| { type: "move"; direction: "up" | "down"; amount?: number }
 	| { type: "adjust"; direction: -1 | 1 }
@@ -57,7 +57,7 @@ export interface HelpShortcut {
 	key: string;
 	label: string;
 }
-export interface GlancePaneViewModel {
+export interface GlanceTpsPaneViewModel {
 	section: SettingsSectionId;
 	title: string;
 	dirty: boolean;
@@ -76,10 +76,10 @@ export interface GlancePaneViewModel {
 	page: PanePage["kind"];
 	actions: HelpShortcut[];
 	help: HelpShortcut[];
-	preview: { config: GlanceConfig; activity?: ActivityPreview; density: PanePreviewDensity; ambientTone?: GlanceThemeSlot };
+	preview: { config: GlanceTpsConfig; activity?: ActivityPreview; density: PanePreviewDensity; ambientTone?: GlanceTpsThemeSlot };
 }
 
-export function createPaneModel(initial: GlanceConfig): PaneModelState {
+export function createPaneModel(initial: GlanceTpsConfig): PaneModelState {
 	return {
 		initial: cloneConfig(initial),
 		draft: cloneConfig(initial),
@@ -275,7 +275,7 @@ function activate(model: PaneModelState): PaneUpdateResult {
 	};
 }
 
-function adjustRow(config: GlanceConfig, row: SettingsRow, direction: -1 | 1): GlanceConfig {
+function adjustRow(config: GlanceTpsConfig, row: SettingsRow, direction: -1 | 1): GlanceTpsConfig {
 	switch (row.kind) {
 		case "shortcut": return config;
 		case "segment":
@@ -374,7 +374,7 @@ export function updatePaneModel(model: PaneModelState, intent: PaneIntent, exten
 	}
 }
 
-export function createPaneViewModel(model: PaneModelState): GlancePaneViewModel {
+export function createPaneViewModel(model: PaneModelState): GlanceTpsPaneViewModel {
 	const rows = rowsFor(model);
 	const page = model.page,
 		content = contentPage(model),
@@ -385,13 +385,13 @@ export function createPaneViewModel(model: PaneModelState): GlancePaneViewModel 
 		: SETTINGS_SECTIONS.find((section) => section.id === model.section)!.label;
 	let hint = row?.kind === "choice" ? (row.options[row.selectedIndex]?.hint ?? row.hint) : (row?.hint ?? "");
 	if (list.segment && !model.draft.segments.find((segment) => segment.id === list.segment)?.enabled) title += " (Off)";
-	let choices: GlancePaneViewModel["choices"] = [];
+	let choices: GlanceTpsPaneViewModel["choices"] = [];
 	let help: HelpShortcut[], actions: HelpShortcut[];
 	if (page.kind === "confirm") {
 		title = page.action === "reset" ? "Reset all settings?" : "Discard unsaved changes?";
 		hint =
 			page.action === "reset"
-				? "Restore Glance defaults in this preview. Save to apply them."
+				? "Restore GlanceTps defaults in this preview. Save to apply them."
 				: "Your saved settings will stay unchanged.";
 		choices = [
 			{ label: "Keep editing", selected: page.index === 0, checked: false },

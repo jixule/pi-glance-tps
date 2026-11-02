@@ -1,15 +1,15 @@
 import { PALETTES, foregroundStyle } from "./palette.js";
-import { selectGlanceTheme, type GlanceAmbientTone } from "./selection.js";
+import { selectGlanceTpsTheme, type GlanceTpsAmbientTone } from "./selection.js";
 import { workingAccent } from "./working-colors.js";
-import type { GlanceThemeName, GlanceThemePair, Rgb, BuiltinSegmentId, WorkingSweepColor } from "../types.js";
+import type { GlanceTpsThemeName, GlanceTpsThemePair, Rgb, BuiltinSegmentId, WorkingSweepColor } from "../types.js";
 
 export type TextStyler = (text: string) => string;
 
-export interface ResolvedGlanceSegmentStyles {
+export interface ResolvedGlanceTpsSegmentStyles {
 	readonly fg: TextStyler;
 }
 
-export interface ResolvedGlanceStyles {
+export interface ResolvedGlanceTpsStyles {
 	readonly cacheKey: string;
 	readonly text: TextStyler;
 	readonly dim: TextStyler;
@@ -20,36 +20,36 @@ export interface ResolvedGlanceStyles {
 	readonly title: TextStyler;
 	/** Normalized beam intensity for the title and border; other styles stay untouched. */
 	readonly highlight?: (style: TextStyler, amount: number) => TextStyler;
-	readonly segments: Record<BuiltinSegmentId, ResolvedGlanceSegmentStyles>;
+	readonly segments: Record<BuiltinSegmentId, ResolvedGlanceTpsSegmentStyles>;
 }
 
-export type GlanceColorMode = "truecolor" | "ansi256";
+export type GlanceTpsColorMode = "truecolor" | "ansi256";
 
-export interface GlanceRenderStyleContext {
-	readonly styles?: ResolvedGlanceStyles;
-	readonly ambientTone?: GlanceAmbientTone;
-	readonly getAmbientTone?: () => GlanceAmbientTone;
+export interface GlanceTpsRenderStyleContext {
+	readonly styles?: ResolvedGlanceTpsStyles;
+	readonly ambientTone?: GlanceTpsAmbientTone;
+	readonly getAmbientTone?: () => GlanceTpsAmbientTone;
 	readonly trueColor?: boolean;
 	readonly getTrueColor?: () => boolean;
 }
 
-const builtInStyles = new Map<string, ResolvedGlanceStyles>();
+const builtInStyles = new Map<string, ResolvedGlanceTpsStyles>();
 
 const STYLE_SEGMENT_IDS = ["git", "model", "context", "tokens", "cost", "throughput"] as const satisfies readonly BuiltinSegmentId[];
 
-function resolveBuiltInSegmentStyles(theme: GlanceThemeName, colorMode: GlanceColorMode): Record<BuiltinSegmentId, ResolvedGlanceSegmentStyles> {
+function resolveBuiltInSegmentStyles(theme: GlanceTpsThemeName, colorMode: GlanceTpsColorMode): Record<BuiltinSegmentId, ResolvedGlanceTpsSegmentStyles> {
 	const palette = PALETTES[theme];
 	return Object.fromEntries(
 		STYLE_SEGMENT_IDS.map((segment) => [segment, { fg: foregroundStyle(palette.segments[segment].fg, colorMode) }]),
-	) as Record<BuiltinSegmentId, ResolvedGlanceSegmentStyles>;
+	) as Record<BuiltinSegmentId, ResolvedGlanceTpsSegmentStyles>;
 }
 
-export function resolveBuiltInGlanceStyles(theme: GlanceThemeName, colorMode: GlanceColorMode = "truecolor", sweepColor: WorkingSweepColor = "theme"): ResolvedGlanceStyles {
-	const cacheKey = `glance:${theme}:${colorMode}${sweepColor === "theme" ? "" : `:${sweepColor}`}`;
+export function resolveBuiltInGlanceTpsStyles(theme: GlanceTpsThemeName, colorMode: GlanceTpsColorMode = "truecolor", sweepColor: WorkingSweepColor = "theme"): ResolvedGlanceTpsStyles {
+	const cacheKey = `glance-tps:${theme}:${colorMode}${sweepColor === "theme" ? "" : `:${sweepColor}`}`;
 	const cached = builtInStyles.get(cacheKey);
 	if (cached) return cached;
 	const palette = PALETTES[theme];
-	const styles: ResolvedGlanceStyles = {
+	const styles: ResolvedGlanceTpsStyles = {
 		cacheKey,
 		text: foregroundStyle(palette.text, colorMode),
 		dim: foregroundStyle(palette.dim, colorMode),
@@ -63,7 +63,7 @@ export function resolveBuiltInGlanceStyles(theme: GlanceThemeName, colorMode: Gl
 	const peak = workingAccent(theme, sweepColor);
 	const colors = new Map<TextStyler, Rgb>([[styles.border, palette.border], [styles.title, palette.title]]);
 	const shades = new Map<TextStyler, Map<number, TextStyler>>();
-	const resolved: ResolvedGlanceStyles = {
+	const resolved: ResolvedGlanceTpsStyles = {
 		...styles,
 		highlight: (style, amount) => {
 			const color = colors.get(style);
@@ -87,13 +87,13 @@ export function resolveBuiltInGlanceStyles(theme: GlanceThemeName, colorMode: Gl
 	return resolved;
 }
 
-function resolveColorMode(context: GlanceRenderStyleContext): GlanceColorMode {
+function resolveColorMode(context: GlanceTpsRenderStyleContext): GlanceTpsColorMode {
 	const trueColor = context.trueColor ?? context.getTrueColor?.() ?? true;
 	return trueColor ? "truecolor" : "ansi256";
 }
 
-export function resolveGlanceRenderStyles(theme: GlanceThemePair, context: GlanceRenderStyleContext = {}, sweepColor: WorkingSweepColor = "theme"): ResolvedGlanceStyles {
+export function resolveGlanceTpsRenderStyles(theme: GlanceTpsThemePair, context: GlanceTpsRenderStyleContext = {}, sweepColor: WorkingSweepColor = "theme"): ResolvedGlanceTpsStyles {
 	if (context.styles) return context.styles;
 	const ambientTone = context.ambientTone ?? context.getAmbientTone?.() ?? "light";
-	return resolveBuiltInGlanceStyles(selectGlanceTheme(theme, ambientTone), resolveColorMode(context), sweepColor);
+	return resolveBuiltInGlanceTpsStyles(selectGlanceTpsTheme(theme, ambientTone), resolveColorMode(context), sweepColor);
 }

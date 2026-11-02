@@ -34,8 +34,8 @@ jobs:
 
       - name: Isolate Pi agent state
         run: |
-          mkdir -p "$RUNNER_TEMP/pi-glance-agent"
-          echo "PI_CODING_AGENT_DIR=$RUNNER_TEMP/pi-glance-agent" >> "$GITHUB_ENV"
+          mkdir -p "$RUNNER_TEMP/pi-glance-tps-agent"
+          echo "PI_CODING_AGENT_DIR=$RUNNER_TEMP/pi-glance-tps-agent" >> "$GITHUB_ENV"
 
       - name: Install dependencies
         run: npm ci

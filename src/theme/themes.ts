@@ -1,4 +1,4 @@
-import { GLANCE_THEME_CATALOG } from "./catalog.js";
+import { TACH_THEME_CATALOG } from "./catalog.js";
 
 type ThemeCatalogMetadataShape = {
 	readonly id: string;
@@ -33,7 +33,7 @@ type ThemeIdCatalog<Catalog extends readonly ThemeCatalogMetadataShape[]> = {
 };
 
 // Theme order in the settings browser.
-export const GLANCE_THEMES = GLANCE_THEME_CATALOG.map(({ id, label, group, groupLabel, tone, tags, detailTags, description, detailDescription }) => ({
+export const TACH_THEMES = TACH_THEME_CATALOG.map(({ id, label, group, groupLabel, tone, tags, detailTags, description, detailDescription }) => ({
 	id,
 	label,
 	group,
@@ -43,17 +43,17 @@ export const GLANCE_THEMES = GLANCE_THEME_CATALOG.map(({ id, label, group, group
 	detailTags,
 	description,
 	detailDescription,
-})) as unknown as ThemeMetadataCatalog<typeof GLANCE_THEME_CATALOG>;
+})) as unknown as ThemeMetadataCatalog<typeof TACH_THEME_CATALOG>;
 
-export type GlanceThemeName = (typeof GLANCE_THEME_CATALOG)[number]["id"];
+export type GlanceTpsThemeName = (typeof TACH_THEME_CATALOG)[number]["id"];
 
-export const GLANCE_THEME_IDS = GLANCE_THEME_CATALOG.map((theme) => theme.id) as unknown as ThemeIdCatalog<typeof GLANCE_THEME_CATALOG>;
-export const GLANCE_THEME_ID_SET: ReadonlySet<GlanceThemeName> = new Set(GLANCE_THEME_IDS);
+export const TACH_THEME_IDS = TACH_THEME_CATALOG.map((theme) => theme.id) as unknown as ThemeIdCatalog<typeof TACH_THEME_CATALOG>;
+export const TACH_THEME_ID_SET: ReadonlySet<GlanceTpsThemeName> = new Set(TACH_THEME_IDS);
 
-export function isGlanceThemeName(value: unknown): value is GlanceThemeName {
-	return typeof value === "string" && GLANCE_THEME_ID_SET.has(value as GlanceThemeName);
+export function isGlanceTpsThemeName(value: unknown): value is GlanceTpsThemeName {
+	return typeof value === "string" && TACH_THEME_ID_SET.has(value as GlanceTpsThemeName);
 }
 
-export function themeLabel(theme: GlanceThemeName): string {
-	return GLANCE_THEMES.find((metadata) => metadata.id === theme)?.label ?? theme;
+export function themeLabel(theme: GlanceTpsThemeName): string {
+	return TACH_THEMES.find((metadata) => metadata.id === theme)?.label ?? theme;
 }

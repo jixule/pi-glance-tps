@@ -1,9 +1,9 @@
-import { GLANCE_THEME_CATALOG } from "./catalog.js";
-import type { GlancePalette, GlanceThemeName, IconMode, IconSet, Rgb } from "../types.js";
+import { TACH_THEME_CATALOG } from "./catalog.js";
+import type { GlanceTpsPalette, GlanceTpsThemeName, IconMode, IconSet, Rgb } from "../types.js";
 
-export const PALETTES: Record<GlanceThemeName, GlancePalette> = Object.fromEntries(
-	GLANCE_THEME_CATALOG.map((theme) => [theme.id, theme.palette]),
-) as Record<GlanceThemeName, GlancePalette>;
+export const PALETTES: Record<GlanceTpsThemeName, GlanceTpsPalette> = Object.fromEntries(
+	TACH_THEME_CATALOG.map((theme) => [theme.id, theme.palette]),
+) as Record<GlanceTpsThemeName, GlanceTpsPalette>;
 
 export const DRAFT_LABELS: Record<IconMode, string> = { nerd: "", plain: "draft" };
 

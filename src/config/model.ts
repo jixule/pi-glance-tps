@@ -13,14 +13,14 @@ import {
 } from "./options.js";
 import { RETRY_BLINK, SUMMARY_SPEED, THROUGHPUT_PRECISION_DESCRIPTOR, WORKING_SPEED } from "./schema.js";
 import { defaultSegmentConfigs, isSegmentId } from "../segments/registry.js";
-import { GLANCE_THEME_ID_SET } from "../theme/themes.js";
+import { TACH_THEME_ID_SET } from "../theme/themes.js";
 import type {
 	ContextDisplayMode,
 	ContextUnknownMode,
 	EditorTopMarginRows,
 	GitShaMode,
-	GlanceConfig,
-	GlanceThemePair,
+	GlanceTpsConfig,
+	GlanceTpsThemePair,
 	IconMode,
 	ModelThinkingMode,
 	SegmentConfig,
@@ -36,7 +36,7 @@ export const CONFIG_VERSION = 15 as const;
 const WORKING_SWEEP_COLORS = new Set(WORKING_SWEEP_COLOR_VALUES);
 
 const ICON_MODES = new Set<IconMode>(ICON_MODE_VALUES);
-const PROVIDER_MODES = new Set<GlanceConfig["display"]["showProvider"]>(PROVIDER_DISPLAY_MODE_VALUES);
+const PROVIDER_MODES = new Set<GlanceTpsConfig["display"]["showProvider"]>(PROVIDER_DISPLAY_MODE_VALUES);
 const WORKSPACE_LABEL_MODES = new Set<WorkspaceLabelMode>(WORKSPACE_LABEL_MODE_VALUES);
 const GIT_CHANGES_MODES = new Set(["hidden", "marker", "summary"] as const);
 const GIT_SHA_MODES = new Set<GitShaMode>(GIT_SHA_MODE_VALUES);
@@ -46,7 +46,7 @@ const TOKENS_DISPLAY_MODES = new Set<TokensDisplayMode>(TOKENS_DISPLAY_MODE_VALU
 const TOKENS_CACHE_MODES = new Set<TokensCacheMode>(TOKENS_CACHE_MODE_VALUES);
 const MODEL_THINKING_MODES = new Set<ModelThinkingMode>(MODEL_THINKING_MODE_VALUES);
 
-export function defaultConfig(): GlanceConfig {
+export function defaultConfig(): GlanceTpsConfig {
 	return {
 		version: CONFIG_VERSION,
 		enabled: true,
@@ -99,7 +99,7 @@ export function defaultConfig(): GlanceConfig {
 	};
 }
 
-export function cloneConfig(config: GlanceConfig): GlanceConfig {
+export function cloneConfig(config: GlanceTpsConfig): GlanceTpsConfig {
 	return {
 		...config,
 		theme: { ...config.theme },
@@ -131,16 +131,16 @@ function parseTokensCacheMode(value: unknown, fallback: TokensCacheMode): Tokens
 	return parseStringEnum(value, TOKENS_CACHE_MODES, fallback);
 }
 
-function parseThemePair(value: unknown, fallback: GlanceThemePair): GlanceThemePair {
-	if (typeof value === "string" && GLANCE_THEME_ID_SET.has(value as GlanceThemePair["light"])) {
-		const theme = value as GlanceThemePair["light"];
+function parseThemePair(value: unknown, fallback: GlanceTpsThemePair): GlanceTpsThemePair {
+	if (typeof value === "string" && TACH_THEME_ID_SET.has(value as GlanceTpsThemePair["light"])) {
+		const theme = value as GlanceTpsThemePair["light"];
 		return { light: theme, dark: theme };
 	}
 	if (!value || typeof value !== "object" || Array.isArray(value)) return { ...fallback };
 	const record = value as Record<string, unknown>;
 	return {
-		light: parseStringEnum(record.light, GLANCE_THEME_ID_SET, fallback.light),
-		dark: parseStringEnum(record.dark, GLANCE_THEME_ID_SET, fallback.dark),
+		light: parseStringEnum(record.light, TACH_THEME_ID_SET, fallback.light),
+		dark: parseStringEnum(record.dark, TACH_THEME_ID_SET, fallback.dark),
 	};
 }
 
@@ -203,7 +203,7 @@ function normalizeSegments(value: unknown): SegmentConfig[] {
 
 // Migrate legacy values, validate known fields, and fill defaults.
 // CONFIG_VERSION changes only when the on-disk schema changes.
-export function normalizeConfig(raw: unknown): GlanceConfig {
+export function normalizeConfig(raw: unknown): GlanceTpsConfig {
 	const defaults = defaultConfig();
 	if (!raw || typeof raw !== "object") return defaults;
 	const record = raw as Record<string, unknown>;
@@ -278,15 +278,15 @@ export function normalizeConfig(raw: unknown): GlanceConfig {
 	};
 }
 
-export function configFromText(text: string): GlanceConfig {
+export function configFromText(text: string): GlanceTpsConfig {
 	return normalizeConfig(JSON.parse(text));
 }
 
-export function configToText(config: GlanceConfig): string {
+export function configToText(config: GlanceTpsConfig): string {
 	return `${JSON.stringify(normalizeConfig(config), null, "\t")}\n`;
 }
 
-export function moveSegment(config: GlanceConfig, id: SegmentId, direction: -1 | 1): GlanceConfig {
+export function moveSegment(config: GlanceTpsConfig, id: SegmentId, direction: -1 | 1): GlanceTpsConfig {
 	const next = cloneConfig(config);
 	const index = next.segments.findIndex((s) => s.id === id);
 	if (index < 0) return next;
@@ -296,7 +296,7 @@ export function moveSegment(config: GlanceConfig, id: SegmentId, direction: -1 |
 	return next;
 }
 
-export function toggleSegment(config: GlanceConfig, id: SegmentId): GlanceConfig {
+export function toggleSegment(config: GlanceTpsConfig, id: SegmentId): GlanceTpsConfig {
 	const next = cloneConfig(config);
 	const segment = next.segments.find((s) => s.id === id);
 	if (segment) segment.enabled = !segment.enabled;

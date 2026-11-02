@@ -13,8 +13,8 @@ import {
 } from "../../src/config/options.js";
 import { cloneConfig, configFromText, configToText, defaultConfig, normalizeConfig } from "../../src/config/model.js";
 import { THROUGHPUT_PRECISION_DESCRIPTOR } from "../../src/config/schema.js";
-import { GLANCE_THEME_IDS } from "../../src/theme/themes.js";
-import type { GlanceConfig, SegmentConfig } from "../../src/types.js";
+import { TACH_THEME_IDS } from "../../src/theme/themes.js";
+import type { GlanceTpsConfig, SegmentConfig } from "../../src/types.js";
 
 function assertDefault(raw: unknown, message: string): void {
 	assert.deepEqual(normalizeConfig(raw), defaultConfig(), message);
@@ -42,7 +42,7 @@ assert.equal(defaults.tokens.cache, "rate", "new configs should default Tokens c
 assert.equal(defaults.throughput.precision, THROUGHPUT_PRECISION_DESCRIPTOR.defaultValue, "default config throughput precision should come from descriptor default");
 assert.deepEqual((defaults).throughput, { precision: THROUGHPUT_PRECISION_DESCRIPTOR.defaultValue }, "default config should include throughput.precision=auto");
 
-for (const theme of GLANCE_THEME_IDS) {
+for (const theme of TACH_THEME_IDS) {
 	assert.deepEqual(normalizeConfig({ theme }).theme, { light: theme, dark: theme }, `${theme} string theme should migrate to a same/same pair`);
 }
 
@@ -384,7 +384,7 @@ assertSegments(normalizeConfig({ segments: [] }).segments, defaults.segments, "e
 assertSegments(normalizeConfig({ segments: "git" }).segments, defaults.segments, "non-array segment lists should fall back to defaults");
 
 const normalized = normalizeConfig({ enabled: false, editor: { minContentRows: 4 } });
-const expectedShape: GlanceConfig = { ...defaults, enabled: false, editor: { ...defaults.editor, minContentRows: 4 } };
+const expectedShape: GlanceTpsConfig = { ...defaults, enabled: false, editor: { ...defaults.editor, minContentRows: 4 } };
 assert.deepEqual(normalized, expectedShape, "partial configs should normalize to the full current config shape");
 
 const rawConfig = {

@@ -10,11 +10,13 @@ import {
 	setCurrentRunModelSpeed,
 	setGitSnapshot,
 	setLastRunModelSpeed,
+	setLiveSpeed,
 	setProviderCount,
 	setUsageTotals,
 } from "./state.js";
+import { charactersFromMessage, LiveSpeedTracker } from "./live-speed.js";
 import { ModelSpeedRunTracker, type ModelSpeedStateIntent } from "./throughput-run-tracker.js";
-import type { GitSnapshot, GlanceConfig, GlanceState, UsageTotals } from "../types.js";
+import type { GitSnapshot, GlanceTpsConfig, GlanceTpsState, UsageTotals } from "../types.js";
 
 export interface RuntimeMessageEndInput {
 	type?: MessageEndEvent["type"];
@@ -37,8 +39,8 @@ export interface RuntimeAgentEndInput {
 }
 
 export interface RuntimeRefreshSessionHost {
-	getConfig(): GlanceConfig;
-	ensureConfig(): Promise<GlanceConfig>;
+	getConfig(): GlanceTpsConfig;
+	ensureConfig(): Promise<GlanceTpsConfig>;
 	getThinkingLevel(): string;
 	nowMs(): number;
 	requestRender(): void;
@@ -140,7 +142,7 @@ const CONFIG_SAVED: RefreshPlan = {
 	render: "always",
 };
 
-function applyModelSpeedIntent(state: GlanceState, intent: ModelSpeedStateIntent): boolean {
+function applyModelSpeedIntent(state: GlanceTpsState, intent: ModelSpeedStateIntent): boolean {
 	switch (intent.kind) {
 		case "none":
 			return false;
@@ -157,7 +159,7 @@ function applyModelSpeedIntent(state: GlanceState, intent: ModelSpeedStateIntent
 }
 
 export class RuntimeRefreshSession {
-	private state?: GlanceState;
+	private state?: GlanceTpsState;
 	private contextSnapshot?: {
 		manager: ExtensionContext["sessionManager"];
 		leafId: string;
@@ -171,10 +173,11 @@ export class RuntimeRefreshSession {
 	private appliedUsageKeys = new Set<string>();
 	private seenEntryIds = new Set<string>();
 	private readonly modelSpeedTracker = new ModelSpeedRunTracker();
+	private readonly liveSpeedTracker = new LiveSpeedTracker();
 
 	constructor(private readonly host: RuntimeRefreshSessionHost) {}
 
-	getState(): GlanceState | undefined {
+	getState(): GlanceTpsState | undefined {
 		return this.state;
 	}
 
@@ -217,12 +220,12 @@ export class RuntimeRefreshSession {
 		this.modelSpeedTracker.reset();
 	}
 
-	private resetState(ctx: ExtensionContext): GlanceState {
+	private resetState(ctx: ExtensionContext): GlanceTpsState {
 		this.state = createInitialState(this.readStateInputs(ctx), this.host.getConfig());
 		return this.state;
 	}
 
-	sessionStart(ctx: ExtensionContext): GlanceState {
+	sessionStart(ctx: ExtensionContext): GlanceTpsState {
 		this.resetAccumulators();
 		return this.resetState(ctx);
 	}
@@ -231,7 +234,7 @@ export class RuntimeRefreshSession {
 		this.resetAccumulators();
 	}
 
-	ensureState(ctx: ExtensionContext): GlanceState {
+	ensureState(ctx: ExtensionContext): GlanceTpsState {
 		if (!this.state) return this.resetState(ctx);
 		this.syncPersistedUsage(ctx);
 		return this.state;
@@ -348,6 +351,28 @@ export class RuntimeRefreshSession {
 		await this.refresh(ctx, LIFECYCLE_MODEL_ON_WORKSPACE_CHANGE);
 	}
 
+	messageStart(): void {
+		this.liveSpeedTracker.start();
+		if (!this.state) return;
+		if (setLiveSpeed(this.state, this.liveSpeedTracker.reading())) this.host.requestRender();
+	}
+
+	messageUpdate(message: unknown): void {
+		if (!this.state) return;
+		if (!this.liveSpeedTracker.observe(charactersFromMessage(message), this.host.nowMs())) return;
+		if (setLiveSpeed(this.state, this.liveSpeedTracker.reading())) this.host.requestRender();
+	}
+
+	/** Advances the streaming spinner; true when the status line needs a redraw. */
+	advanceSpeedFrame(): boolean {
+		if (!this.liveSpeedTracker.advanceFrame() || !this.state) return false;
+		return setLiveSpeed(this.state, this.liveSpeedTracker.reading());
+	}
+
+	isSpeedAnimating(): boolean {
+		return this.liveSpeedTracker.isGenerating();
+	}
+
 	async toolExecutionEnd(ctx: ExtensionContext): Promise<void> {
 		await this.refresh(ctx, TOOL_EXECUTION_END);
 	}
@@ -377,6 +402,13 @@ export class RuntimeRefreshSession {
 		const hadState = this.state !== undefined;
 		const delta = usageTotalsFromMessage(message);
 		const modelSpeedIntent = this.modelSpeedTracker.messageEnd(message, () => this.host.nowMs());
+		const liveSpeedReading = message.role === "assistant" && this.liveSpeedTracker.isGenerating()
+			? this.liveSpeedTracker.finish(
+				typeof message.usage?.output === "number" ? message.usage.output : 0,
+				charactersFromMessage(message),
+				this.host.nowMs(),
+			)
+			: null;
 		const plan = message.role === "assistant"
 			? ASSISTANT_MESSAGE_END
 			: message.role === "toolResult" && !this.usageTotalsAreZero(delta)
@@ -388,6 +420,7 @@ export class RuntimeRefreshSession {
 				let changed = false;
 				if (hadState) changed = this.applyUsageDelta(message, delta, this.messageUsageKey(message)) || changed;
 				if (this.state) changed = applyModelSpeedIntent(this.state, modelSpeedIntent) || changed;
+				if (this.state && message.role === "assistant") changed = setLiveSpeed(this.state, liveSpeedReading) || changed;
 				return changed;
 			},
 		});
@@ -415,8 +448,11 @@ export class RuntimeRefreshSession {
 
 	agentStart(): void {
 		this.contextSnapshot = undefined;
+		this.liveSpeedTracker.reset();
+		let changed = this.state ? setLiveSpeed(this.state, null) : false;
 		const intent = this.modelSpeedTracker.start();
-		if (this.state && applyModelSpeedIntent(this.state, intent)) this.host.requestRender();
+		if (this.state) changed = applyModelSpeedIntent(this.state, intent) || changed;
+		if (changed) this.host.requestRender();
 	}
 
 	async agentEnd(_event: RuntimeAgentEndInput, ctx: ExtensionContext): Promise<void> {

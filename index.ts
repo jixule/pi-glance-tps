@@ -2,20 +2,20 @@ import { join } from "node:path";
 import { getAgentDir, type ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { createDraftStore } from "./src/input/store.js";
 import { createConfigStore } from "./src/config/store.js";
-import { showGlancePane } from "./src/settings/pane.js";
-import { createGlanceRuntime } from "./src/runtime/runtime.js";
+import { showGlanceTpsPane } from "./src/settings/pane.js";
+import { createGlanceTpsRuntime } from "./src/runtime/runtime.js";
 
-export default function piGlance(pi: ExtensionAPI): void {
-	const store = createConfigStore(join(getAgentDir(), "pi-glance", "config.json"));
-	const runtime = createGlanceRuntime({
+export default function piGlanceTps(pi: ExtensionAPI): void {
+	const store = createConfigStore(join(getAgentDir(), "pi-glance-tps", "config.json"));
+	const runtime = createGlanceTpsRuntime({
 		getThinkingLevel: () => pi.getThinkingLevel(),
-		...createDraftStore(join(getAgentDir(), "pi-glance", "drafts")),
+		...createDraftStore(join(getAgentDir(), "pi-glance-tps", "drafts")),
 		...store,
-		showPane: showGlancePane,
+		showPane: showGlanceTpsPane,
 	});
 
-	pi.registerCommand("glance", {
-		description: "Open pi-glance configuration pane",
+	pi.registerCommand("glance-tps", {
+		description: "Open pi-glance-tps configuration pane",
 		handler: runtime.commands.openPane,
 	});
 
@@ -30,6 +30,8 @@ export default function piGlance(pi: ExtensionAPI): void {
 	pi.on("before_provider_request", runtime.events.providerRequest);
 	pi.on("ui_prompt_start", runtime.events.uiPromptStart);
 	pi.on("ui_prompt_end", runtime.events.uiPromptEnd);
+	pi.on("message_start", runtime.events.messageStart);
+	pi.on("message_update", runtime.events.messageUpdate);
 	pi.on("message_end", runtime.events.messageEnd);
 	pi.on("turn_end", runtime.events.turnEnd);
 	pi.on("agent_start", runtime.events.agentStart);

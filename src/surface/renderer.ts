@@ -1,9 +1,9 @@
 import { renderInputSurfaceFrame } from "./frame.js";
-import { GlanceLineRenderer } from "./status-line.js";
-import { resolveGlanceRenderStyles, type GlanceRenderStyleContext } from "../theme/adapter.js";
-import type { ActivityAnimation, ActivityStatus, GlanceConfig, GlanceState, WidthMode } from "../types.js";
+import { GlanceTpsLineRenderer } from "./status-line.js";
+import { resolveGlanceTpsRenderStyles, type GlanceTpsRenderStyleContext } from "../theme/adapter.js";
+import type { ActivityAnimation, ActivityStatus, GlanceTpsConfig, GlanceTpsState, WidthMode } from "../types.js";
 
-interface InputSurfaceRenderOptions extends GlanceRenderStyleContext {
+interface InputSurfaceRenderOptions extends GlanceTpsRenderStyleContext {
 	activity?: ActivityStatus;
 	animation?: ActivityAnimation;
 	hasDraft?: boolean;
@@ -14,8 +14,8 @@ interface InputSurfaceRenderOptions extends GlanceRenderStyleContext {
 	previewDensity?: WidthMode;
 }
 
-const PREVIEW_STATE: GlanceState = {
-	workspace: { name: "pi-glance", path: "/Users/winnie/projects/pi-glance" },
+const PREVIEW_STATE: GlanceTpsState = {
+	workspace: { name: "pi-glance-tps", path: "/Users/winnie/projects/pi-glance-tps" },
 	git: {
 		repo: true,
 		branch: "main",
@@ -39,10 +39,11 @@ const PREVIEW_STATE: GlanceState = {
 	usage: { input: 12_400, output: 3_100, cacheRead: 800, cacheWrite: 0, cost: 0.042 },
 	throughput: { lastRun: null, currentRun: null },
 	version: 0,
+	liveSpeed: null,
 };
 
 export function renderInputSurfacePreview(
-	config: GlanceConfig,
+	config: GlanceTpsConfig,
 	width: number,
 	options: InputSurfaceRenderOptions = {},
 ): string[] {
@@ -50,8 +51,8 @@ export function renderInputSurfacePreview(
 }
 
 export function renderInputSurface(
-	state: GlanceState,
-	config: GlanceConfig,
+	state: GlanceTpsState,
+	config: GlanceTpsConfig,
 	width: number,
 	options: InputSurfaceRenderOptions = {},
 ): string[] {
@@ -59,11 +60,11 @@ export function renderInputSurface(
 }
 
 /** Own the preview's cache without caching prompt text, layout or animation. */
-export function createInputSurfaceRenderer(source: GlanceState | (() => GlanceState) = PREVIEW_STATE) {
-	const statusLine = new GlanceLineRenderer();
-	return (config: GlanceConfig, width: number, options: InputSurfaceRenderOptions = {}): string[] => {
+export function createInputSurfaceRenderer(source: GlanceTpsState | (() => GlanceTpsState) = PREVIEW_STATE) {
+	const statusLine = new GlanceTpsLineRenderer();
+	return (config: GlanceTpsConfig, width: number, options: InputSurfaceRenderOptions = {}): string[] => {
 		const state = typeof source === "function" ? source() : source;
-		const styles = resolveGlanceRenderStyles(config.theme, options, config.editor.workingSweepColor);
+		const styles = resolveGlanceTpsRenderStyles(config.theme, options, config.editor.workingSweepColor);
 		return renderInputSurfaceFrame({
 			state,
 			config,

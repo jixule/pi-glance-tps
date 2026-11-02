@@ -20,7 +20,7 @@ import {
 	updatePaneModel,
 	type PaneIntent,
 	type PaneModelState,
-	type GlancePaneViewModel,
+	type GlanceTpsPaneViewModel,
 	type HelpShortcut,
 } from "./model.js";
 import { shortcutConflict } from "../input/keybinding.js";
@@ -30,16 +30,16 @@ import { ActivityClock, activityMotion, type ScheduleActivityFrame } from "../ru
 import { ExtensionStatusCache, EXTENSION_STATUS_RESET } from "../surface/extension-statuses.js";
 import { truncateStyledText } from "../surface/text.js";
 import { createInputSurfaceRenderer } from "../surface/renderer.js";
-import type { GlanceRenderStyleContext } from "../theme/adapter.js";
-import type { ExtensionStatusSource, GlanceConfig, GlanceState } from "../types.js";
+import type { GlanceTpsRenderStyleContext } from "../theme/adapter.js";
+import type { ExtensionStatusSource, GlanceTpsConfig, GlanceTpsState } from "../types.js";
 
-type PaneResult = { action: "save"; config: GlanceConfig } | { action: "cancel" };
-export interface GlancePaneOptions {
-	readonly getPreviewState?: () => GlanceState;
+type PaneResult = { action: "save"; config: GlanceTpsConfig } | { action: "cancel" };
+export interface GlanceTpsPaneOptions {
+	readonly getPreviewState?: () => GlanceTpsState;
 	readonly getExtensionStatuses?: ExtensionStatusSource;
 	readonly previewNowMs?: () => number;
 	readonly schedulePreviewFrame?: ScheduleActivityFrame;
-	readonly renderStyleContext?: GlanceRenderStyleContext;
+	readonly renderStyleContext?: GlanceTpsRenderStyleContext;
 }
 
 /** Reserve bounded content slots so changing pages does not move the preview in regular mode. */
@@ -76,9 +76,9 @@ function wrapShortcuts(items: string[], width: number): string[] {
 	return lines;
 }
 
-export class GlanceConfigPane implements Component, Focusable {
+export class GlanceTpsConfigPane implements Component, Focusable {
 	private model: PaneModelState;
-	private view: GlancePaneViewModel;
+	private view: GlanceTpsPaneViewModel;
 	private readonly renderSurface: ReturnType<typeof createInputSurfaceRenderer>;
 	private readonly extensionStatuses = new ExtensionStatusCache();
 	private previewVisible = true;
@@ -100,14 +100,14 @@ export class GlanceConfigPane implements Component, Focusable {
 	}
 
 	constructor(
-		initial: GlanceConfig,
+		initial: GlanceTpsConfig,
 		private readonly theme: Pick<Theme, "fg"> & Partial<Pick<Theme, "bg">>,
 		private readonly done: (result: PaneResult) => void,
 		private readonly requestRender: () => void,
 		private readonly keybindings?: Pick<KeybindingsManager, "matches" | "getKeys"> & Partial<Pick<KeybindingsManager, "getEffectiveConfig">>,
 		private readonly getTerminalRows: () => number | undefined = () => undefined,
-		previewState?: GlanceState,
-		private readonly options: GlancePaneOptions = {},
+		previewState?: GlanceTpsState,
+		private readonly options: GlanceTpsPaneOptions = {},
 	) {
 		this.model = createPaneModel(initial);
 		this.view = createPaneViewModel(this.model);
@@ -276,7 +276,7 @@ export class GlanceConfigPane implements Component, Focusable {
 	private fg(tone: "accent" | "muted" | "dim" | "warning" | "success", text: string): string {
 		return this.theme.fg(tone, text);
 	}
-	private renderPreview(view: GlancePaneViewModel, width: number, extensionStatuses: ReadonlyMap<string, string> | undefined): string[] {
+	private renderPreview(view: GlanceTpsPaneViewModel, width: number, extensionStatuses: ReadonlyMap<string, string> | undefined): string[] {
 		const config = view.preview.config;
 		const scene = view.preview.activity;
 		const cancelKey = this.keybindings?.getKeys?.("app.interrupt")?.[0] ?? "escape";
@@ -299,7 +299,7 @@ export class GlanceConfigPane implements Component, Focusable {
 		};
 		const preview = this.renderSurface(config, width, options);
 		if (!config.enabled)
-			return fitRows(["Preview · Glance is off", "Turn Glance on to preview the editor."]
+			return fitRows(["Preview · GlanceTps is off", "Turn GlanceTps on to preview the editor."]
 				.map(text => this.fg("dim", truncateStyledText(text, width))), preview.length + 1);
 		const densityLabel = view.preview.density[0]!.toUpperCase() + view.preview.density.slice(1);
 		const motion = activityMotion(config, scene === "idle" ? undefined : scene);
@@ -309,7 +309,7 @@ export class GlanceConfigPane implements Component, Focusable {
 			: view.section === "status" ? `Preview · ${densityLabel}` : "Preview";
 		return [this.fg("dim", truncateStyledText(label, width)), ...preview];
 	}
-	private renderRow(row: GlancePaneViewModel["rows"][number], width: number): string {
+	private renderRow(row: GlanceTpsPaneViewModel["rows"][number], width: number): string {
 		const mark = row.selected ? "› " : "  ";
 		const value =
 			row.kind === "number"
@@ -339,7 +339,7 @@ export class GlanceConfigPane implements Component, Focusable {
 				: this.fg("accent", `${SETTINGS_SECTIONS[sectionIndex]!.label} (${sectionIndex + 1}/${SETTINGS_SECTIONS.length})`);
 		const header = [
 			spread(
-				this.fg("accent", "◌ Glance"),
+				this.fg("accent", "◌ GlanceTps"),
 				this.fg(view.dirty ? "warning" : "dim", view.dirty ? "Unsaved changes" : "No changes"),
 				width,
 			),
@@ -446,22 +446,22 @@ export class GlanceConfigPane implements Component, Focusable {
 	}
 }
 
-interface GlancePaneUI {
+interface GlanceTpsPaneUI {
 	custom<T>(
 		factory: (tui: TUI, theme: Theme, keybindings: KeybindingsManager, done: (result: T) => void) => Component,
 		options?: Parameters<ExtensionUIContext["custom"]>[1],
 	): Promise<T>;
 }
-export async function showGlancePane(
-	initial: GlanceConfig,
-	ctx: { ui: GlancePaneUI },
-	previewState?: GlanceState,
-	options: GlancePaneOptions = {},
+export async function showGlanceTpsPane(
+	initial: GlanceTpsConfig,
+	ctx: { ui: GlanceTpsPaneUI },
+	previewState?: GlanceTpsState,
+	options: GlanceTpsPaneOptions = {},
 ): Promise<PaneResult> {
-	let pane: GlanceConfigPane | undefined;
+	let pane: GlanceTpsConfigPane | undefined;
 	try {
 		return await ctx.ui.custom<PaneResult>((tui, theme, keybindings, done) => {
-			pane = new GlanceConfigPane(
+			pane = new GlanceTpsConfigPane(
 				initial,
 				theme,
 				done,

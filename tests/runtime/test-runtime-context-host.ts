@@ -10,7 +10,7 @@ import { defaultConfig } from "../../src/config/model.js";
 import { RuntimeRefreshSession } from "../../src/runtime/refresh-session.js";
 
 test("real Pi lifecycle reuses completed Context snapshots and includes persisted tool results", { timeout: 10_000 }, async t => {
-	const root = await mkdtemp(join(tmpdir(), "glance-context-host-"));
+	const root = await mkdtemp(join(tmpdir(), "glance-tps-context-host-"));
 	let session: Awaited<ReturnType<typeof createAgentSession>>["session"] | undefined;
 	t.after(async () => { session?.dispose(); await rm(root, { recursive: true, force: true }); });
 	const config = defaultConfig();
@@ -41,7 +41,7 @@ test("real Pi lifecycle reuses completed Context snapshots and includes persiste
 		cwd: root, agentDir: root, settingsManager, noExtensions: true, noSkills: true,
 		noPromptTemplates: true, noThemes: true, noContextFiles: true,
 		extensionFactories: [pi => {
-			pi.registerProvider("glance-context-local", {
+			pi.registerProvider("glance-tps-context-local", {
 				api: "openai-completions", baseUrl: "https://example.invalid", apiKey: "DEMO-not-a-credential",
 				models: [{ id: "local", name: "DEMO local", reasoning: false, input: ["text"], contextWindow: 200_000,
 					maxTokens: 128, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 } }],
@@ -87,7 +87,7 @@ test("real Pi lifecycle reuses completed Context snapshots and includes persiste
 			description: "Return a local fixture", parameters: Type.Object({}),
 			execute: async () => ({ content: [{ type: "text", text: "DEMO tool output ".repeat(100) }], details: undefined }) }],
 	}));
-	await session.setModel(modelRuntime.getModel("glance-context-local", "local")!);
+	await session.setModel(modelRuntime.getModel("glance-tps-context-local", "local")!);
 	await session.bindExtensions({});
 	session.setActiveToolsByName(["demo_result"]);
 	await session.prompt("DEMO context lifecycle");

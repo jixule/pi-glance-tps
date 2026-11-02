@@ -1,6 +1,6 @@
-import type { GlancePalette } from "../types.js";
+import type { GlanceTpsPalette } from "../types.js";
 
-export type GlanceThemeCatalogEntry = {
+export type GlanceTpsThemeCatalogEntry = {
 	id: string;
 	label: string;
 	group: "core" | "catppuccin" | "classic" | "editor" | "kanagawa" | "everforest" | "accessibility";
@@ -10,10 +10,10 @@ export type GlanceThemeCatalogEntry = {
 	detailTags: readonly string[];
 	description: string;
 	detailDescription: string;
-	palette: GlancePalette;
+	palette: GlanceTpsPalette;
 };
 
-export const GLANCE_THEME_CATALOG = [
+export const TACH_THEME_CATALOG = [
 	{
 		"id": "light",
 		"label": "Light",
@@ -2213,4 +2213,4 @@ export const GLANCE_THEME_CATALOG = [
 			}
 		}
 	}
-] as const satisfies readonly GlanceThemeCatalogEntry[];
+] as const satisfies readonly GlanceTpsThemeCatalogEntry[];

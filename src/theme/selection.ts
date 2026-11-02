@@ -1,8 +1,8 @@
-import type { GlanceThemeName, GlanceThemePair } from "../types.js";
+import type { GlanceTpsThemeName, GlanceTpsThemePair } from "../types.js";
 
-export type GlanceAmbientTone = "light" | "dark";
-export type GlanceThemeSlot = "light" | "dark";
+export type GlanceTpsAmbientTone = "light" | "dark";
+export type GlanceTpsThemeSlot = "light" | "dark";
 
-export function selectGlanceTheme(pair: GlanceThemePair, tone: GlanceAmbientTone): GlanceThemeName {
+export function selectGlanceTpsTheme(pair: GlanceTpsThemePair, tone: GlanceTpsAmbientTone): GlanceTpsThemeName {
 	return tone === "dark" ? pair.dark : pair.light;
 }

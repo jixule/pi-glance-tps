@@ -23,7 +23,7 @@ test("choice descriptors read once and preserve values outside the presets", () 
 
 test("toggle descriptors use explicit On and Off choices", () => {
 	const config = defaultConfig();
-	const descriptor = toggleSetting("enabled", "Glance", "", c => c.enabled, (c, value) => { c.enabled = value; });
+	const descriptor = toggleSetting("enabled", "GlanceTps", "", c => c.enabled, (c, value) => { c.enabled = value; });
 	assert.equal(descriptor.kind, "toggle");
 	assert.equal(descriptor.value(config), "On");
 	descriptor.select(config, 1);

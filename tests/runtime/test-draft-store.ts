@@ -7,7 +7,7 @@ import { PromptStash } from "../../src/input/stash.js";
 import { createDraftStore } from "../../src/input/store.js";
 
 test("a first-turn draft survives store recreation, stays session-local and is removed on restore", () => {
-	const dir = mkdtempSync(join(tmpdir(), "glance-drafts-"));
+	const dir = mkdtempSync(join(tmpdir(), "glance-tps-drafts-"));
 	try {
 		const store = createDraftStore(dir);
 		const stash = new PromptStash(store.loadDraft("one"), text => store.saveDraft("one", text));
@@ -23,7 +23,7 @@ test("a first-turn draft survives store recreation, stays session-local and is r
 });
 
 test("invalid draft files are not overwritten and save failure leaves the in-memory stash intact", () => {
-	const dir = mkdtempSync(join(tmpdir(), "glance-drafts-fail-"));
+	const dir = mkdtempSync(join(tmpdir(), "glance-tps-drafts-fail-"));
 	try {
 		const store = createDraftStore(dir);
 		writeFileSync(join(dir, "invalid.json"), "{");

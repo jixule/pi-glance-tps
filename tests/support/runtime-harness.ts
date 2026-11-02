@@ -2,9 +2,9 @@ import { strict as assert } from "node:assert";
 import type { ExtensionCommandContext, ExtensionContext, ReadonlyFooterDataProvider } from "@earendil-works/pi-coding-agent";
 import { defaultConfig } from "../../src/config/model.js";
 import type { ConfigLoadResult } from "../../src/config/store.js";
-import { createGlanceRuntime, type CreateGitRefresherOptions, type GlancePaneResult, type GlanceRuntimeAdapters, type RuntimeGitRefresher, type RuntimeShowPaneOptions } from "../../src/runtime/runtime.js";
+import { createGlanceTpsRuntime, type CreateGitRefresherOptions, type GlanceTpsPaneResult, type GlanceTpsRuntimeAdapters, type RuntimeGitRefresher, type RuntimeShowPaneOptions } from "../../src/runtime/runtime.js";
 import type { StateSessionEntry } from "../../src/runtime/snapshot.js";
-import type { GitSnapshot, GlanceConfig, GlanceState } from "../../src/types.js";
+import type { GitSnapshot, GlanceTpsConfig, GlanceTpsState } from "../../src/types.js";
 
 export type RuntimeMode = "tui" | "rpc" | "json" | "print";
 
@@ -82,24 +82,24 @@ export interface RuntimeGitHarness {
 }
 
 export interface RuntimeHarnessOptions {
-	loadDraft?: GlanceRuntimeAdapters["loadDraft"];
-	saveDraft?: GlanceRuntimeAdapters["saveDraft"];
+	loadDraft?: GlanceTpsRuntimeAdapters["loadDraft"];
+	saveDraft?: GlanceTpsRuntimeAdapters["saveDraft"];
 	workingSweepNowMs?: () => number;
 	nowMs?: () => number;
-	scheduleSweepFrame?: GlanceRuntimeAdapters["scheduleSweepFrame"];
-	loadConfigSyncConfig?: GlanceConfig;
-	loadConfigConfig?: GlanceConfig;
+	scheduleSweepFrame?: GlanceTpsRuntimeAdapters["scheduleSweepFrame"];
+	loadConfigSyncConfig?: GlanceTpsConfig;
+	loadConfigConfig?: GlanceTpsConfig;
 	loadConfigSyncResult?: ConfigLoadResult;
 	loadConfigResult?: ConfigLoadResult;
-	showPaneResults?: GlancePaneResult[];
-	onSaveConfig?: (config: GlanceConfig) => void | Promise<void>;
+	showPaneResults?: GlanceTpsPaneResult[];
+	onSaveConfig?: (config: GlanceTpsConfig) => void | Promise<void>;
 	saveConfigError?: Error;
 	git?: RuntimeGitHarness;
 	getThinkingLevel?: () => string;
 	getTrueColor?: () => boolean;
 }
 
-type ProductionRuntime = ReturnType<typeof createGlanceRuntime>;
+type ProductionRuntime = ReturnType<typeof createGlanceTpsRuntime>;
 type RuntimeHarnessEvents = {
 	[K in keyof ProductionRuntime["events"]]: (event: unknown, ctx: ExtensionContext) => ReturnType<ProductionRuntime["events"][K]>;
 };
@@ -110,29 +110,29 @@ export type RuntimeHarnessRuntime = Omit<ProductionRuntime, "events"> & {
 
 export interface RuntimeHarness {
 	runtime: RuntimeHarnessRuntime;
-	showPaneInitials: GlanceConfig[];
+	showPaneInitials: GlanceTpsConfig[];
 	showPaneContexts: ExtensionCommandContext[];
-	showPanePreviewStates: Array<GlanceState | undefined>;
+	showPanePreviewStates: Array<GlanceTpsState | undefined>;
 	showPaneOptions: Array<RuntimeShowPaneOptions | undefined>;
-	savedConfigs: GlanceConfig[];
+	savedConfigs: GlanceTpsConfig[];
 	getLoadConfigCalls(): number;
 }
 
-export function cloneConfig(config: GlanceConfig = defaultConfig()): GlanceConfig {
-	return JSON.parse(JSON.stringify(config)) as GlanceConfig;
+export function cloneConfig(config: GlanceTpsConfig = defaultConfig()): GlanceTpsConfig {
+	return JSON.parse(JSON.stringify(config)) as GlanceTpsConfig;
 }
 
-export function loadedConfigResult(config: GlanceConfig = defaultConfig()): ConfigLoadResult {
+export function loadedConfigResult(config: GlanceTpsConfig = defaultConfig()): ConfigLoadResult {
 	return { config, status: "loaded", writable: true };
 }
 
-export function disabledConfig(config = defaultConfig()): GlanceConfig {
+export function disabledConfig(config = defaultConfig()): GlanceTpsConfig {
 	const next = cloneConfig(config);
 	next.enabled = false;
 	return next;
 }
 
-export function nextEnabledConfig(config = defaultConfig()): GlanceConfig {
+export function nextEnabledConfig(config = defaultConfig()): GlanceTpsConfig {
 	const next = cloneConfig(config);
 	next.enabled = true;
 	next.git.pollIntervalMs = config.git.pollIntervalMs + 1234;
@@ -261,8 +261,8 @@ export function createRuntimeTestContext(options: RuntimeTestContextOptions = {}
 	const statuses = options.extensionStatuses ?? new Map<string, string>();
 	const footerData: ReadonlyFooterDataProvider = {
 		getExtensionStatuses: () => statuses,
-		getGitBranch: () => { throw new Error("Glance owns its Git source"); },
-		getAvailableProviderCount: () => { throw new Error("Glance owns its provider source"); },
+		getGitBranch: () => { throw new Error("GlanceTps owns its Git source"); },
+		getAvailableProviderCount: () => { throw new Error("GlanceTps owns its provider source"); },
 		onBranchChange: () => { throw new Error("Status rendering must not subscribe to Git changes"); },
 	};
 
@@ -389,18 +389,18 @@ export function invokeEditorFactory(test: RuntimeTestContext, index: number, req
 }
 
 export function createRuntimeHarness(options: RuntimeHarnessOptions = {}): RuntimeHarness {
-	const showPaneInitials: GlanceConfig[] = [];
+	const showPaneInitials: GlanceTpsConfig[] = [];
 	const showPaneContexts: ExtensionCommandContext[] = [];
-	const showPanePreviewStates: Array<GlanceState | undefined> = [];
+	const showPanePreviewStates: Array<GlanceTpsState | undefined> = [];
 	const showPaneOptions: Array<RuntimeShowPaneOptions | undefined> = [];
-	const savedConfigs: GlanceConfig[] = [];
+	const savedConfigs: GlanceTpsConfig[] = [];
 	let loadConfigCalls = 0;
 	const loadConfigSyncConfig = options.loadConfigSyncConfig ?? defaultConfig();
 	const loadConfigConfig = options.loadConfigConfig ?? loadConfigSyncConfig;
 	const loadConfigSyncResult = options.loadConfigSyncResult ?? loadedConfigResult(loadConfigSyncConfig);
 	const loadConfigResult = options.loadConfigResult ?? loadedConfigResult(loadConfigConfig);
 	const showPaneResults = [...(options.showPaneResults ?? [])];
-	const adapters: GlanceRuntimeAdapters = {
+	const adapters: GlanceTpsRuntimeAdapters = {
 		loadDraft: options.loadDraft,
 		saveDraft: options.saveDraft,
 		workingSweepNowMs: options.workingSweepNowMs,
@@ -430,7 +430,7 @@ export function createRuntimeHarness(options: RuntimeHarnessOptions = {}): Runti
 		createGitRefresher: options.git?.create,
 	};
 	return {
-		runtime: createGlanceRuntime(adapters) as RuntimeHarnessRuntime,
+		runtime: createGlanceTpsRuntime(adapters) as RuntimeHarnessRuntime,
 		showPaneInitials,
 		showPaneContexts,
 		showPanePreviewStates,

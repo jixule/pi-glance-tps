@@ -1,4 +1,4 @@
-import type { ResolvedGlanceStyles } from "../theme/adapter.js";
+import type { ResolvedGlanceTpsStyles } from "../theme/adapter.js";
 import { createTextSweep, sweepMotion } from "./sweep.js";
 
 export function sweepProfile(width: number, elapsedMs: number, speed?: number): { center: number; radius: number; periodMs: number } {
@@ -9,6 +9,6 @@ export function sweepProfile(width: number, elapsedMs: number, speed?: number): 
 }
 
 /** A broad, feathered beam across the path and its connecting line only. */
-export function createTopEdgeSweep(width: number, elapsedMs: number, styles: ResolvedGlanceStyles, speed?: number) {
+export function createTopEdgeSweep(width: number, elapsedMs: number, styles: ResolvedGlanceTpsStyles, speed?: number) {
 	return createTextSweep(sweepProfile(width, elapsedMs, speed), styles);
 }

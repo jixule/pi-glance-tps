@@ -1,4 +1,4 @@
-import type { ResolvedGlanceStyles, TextStyler } from "../theme/adapter.js";
+import type { ResolvedGlanceTpsStyles, TextStyler } from "../theme/adapter.js";
 import { safeSurfaceWidth } from "./layout.js";
 import { createTextSweep, sweepMotion } from "./sweep.js";
 
@@ -25,7 +25,7 @@ export function perimeterSweepProfile(width: number, bodyRows: number, elapsedMs
 }
 
 /** One clockwise path, starting at the top-left corner. Margins are not part of it. */
-export function createPerimeterSweep(width: number, bodyRows: number, elapsedMs: number, styles: ResolvedGlanceStyles, topGap?: PerimeterGap, speed?: number, bottomGap?: PerimeterGap) {
+export function createPerimeterSweep(width: number, bodyRows: number, elapsedMs: number, styles: ResolvedGlanceTpsStyles, topGap?: PerimeterGap, speed?: number, bottomGap?: PerimeterGap) {
 	const profile = perimeterSweepProfile(width, bodyRows, elapsedMs, topGap, speed, bottomGap);
 	const paint = createTextSweep(profile, styles);
 	return (text: string, style: TextStyler, column: number, row: number): string => {

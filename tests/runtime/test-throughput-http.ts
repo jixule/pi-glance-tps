@@ -18,7 +18,7 @@ const cases = [
 ] as const;
 
 function event(type: string, at: number, fields: Record<string, unknown>): string {
-	return `event: ${type}\ndata: ${JSON.stringify({ type, glanceTestTimeMs: at, ...fields })}\n\n`;
+	return `event: ${type}\ndata: ${JSON.stringify({ type, glanceTpsTestTimeMs: at, ...fields })}\n\n`;
 }
 
 function completeResponse(res: ServerResponse, scenario: typeof cases[number]): void {
@@ -42,7 +42,7 @@ function completeResponse(res: ServerResponse, scenario: typeof cases[number]): 
 }
 
 for (const scenario of cases) test(`native HTTP throughput counts ${scenario.name}`, { timeout: 20_000 }, async (t) => {
-	const root = await mkdtemp(join(tmpdir(), "glance-throughput-http-"));
+	const root = await mkdtemp(join(tmpdir(), "glance-tps-throughput-http-"));
 	let session: Awaited<ReturnType<typeof createAgentSession>>["session"] | undefined;
 	let abortTimer: ReturnType<typeof setTimeout> | undefined;
 	let now = 0, attempts = 0, requestEvents = 0, assistantEnds = 0;
@@ -93,7 +93,7 @@ for (const scenario of cases) test(`native HTTP throughput counts ${scenario.nam
 		cwd: root, agentDir: root, settingsManager, noExtensions: true, noSkills: true,
 		noPromptTemplates: true, noThemes: true, noContextFiles: true,
 		extensionFactories: [pi => {
-			pi.registerProvider("glance-throughput-http", {
+			pi.registerProvider("glance-tps-throughput-http", {
 				api: "openai-responses", baseUrl: `http://127.0.0.1:${address.port}/v1`, apiKey: "DEMO-not-a-credential",
 				models: [{ id: "local", name: "DEMO local HTTP", reasoning: false, input: ["text"], contextWindow: 200_000,
 					maxTokens: 2_000, cost: { input: 1, output: 2, cacheRead: 0, cacheWrite: 0 } }],
@@ -104,8 +104,8 @@ for (const scenario of cases) test(`native HTTP throughput counts ${scenario.nam
 			pi.on("before_provider_request", () => { requestEvents++; tracked.providerRequest(); });
 			pi.on("provider_stream_event", event => {
 				const data = event.data;
-				if (typeof data === "object" && data !== null && "glanceTestTimeMs" in data && typeof data.glanceTestTimeMs === "number") {
-					now = data.glanceTestTimeMs;
+				if (typeof data === "object" && data !== null && "glanceTpsTestTimeMs" in data && typeof data.glanceTpsTestTimeMs === "number") {
+					now = data.glanceTpsTestTimeMs;
 				}
 			});
 			pi.on("message_end", (event, ctx) => {
@@ -122,7 +122,7 @@ for (const scenario of cases) test(`native HTTP throughput counts ${scenario.nam
 		cwd: root, agentDir: root, modelRuntime, resourceLoader: loader, settingsManager,
 		sessionManager: SessionManager.inMemory(root), noTools: "all",
 	}));
-	const model = modelRuntime.getModel("glance-throughput-http", "local");
+	const model = modelRuntime.getModel("glance-tps-throughput-http", "local");
 	assert.ok(model);
 	await session.setModel(model);
 	await session.bindExtensions({});

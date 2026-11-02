@@ -4,7 +4,7 @@ import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { defaultConfig } from "../../src/config/model.js";
 import { PALETTES, fg, fg256 } from "../../src/theme/palette.js";
 import { renderInputSurface } from "../../src/surface/renderer.js";
-import type { GlanceRenderStyleContext } from "../../src/theme/adapter.js";
+import type { GlanceTpsRenderStyleContext } from "../../src/theme/adapter.js";
 import {
 	assistantMessage,
 	cloneConfig,
@@ -59,7 +59,7 @@ function assertScanDelta(label: string, before: ScanCounts, test: TestContext, e
 	assertScanCounter(label, "branch", before, after, expected.branch);
 }
 
-function assertAmbientPaneOptions(options: RuntimeHarness["showPaneOptions"][number], message: string): GlanceRenderStyleContext {
+function assertAmbientPaneOptions(options: RuntimeHarness["showPaneOptions"][number], message: string): GlanceTpsRenderStyleContext {
 	const renderStyleContext = options?.renderStyleContext;
 	assert.ok(renderStyleContext, `${message}: pane should receive a render style context`);
 	assert.equal(renderStyleContext.styles, undefined, `${message}: inactive Pi style provider should not inject Pi color styles`);
@@ -248,7 +248,7 @@ await test("sessionStart should stay synchronous for disabled config", async () 
 	assert.equal(harness.getLoadConfigCalls(), 0, "disabled sessionStart should not call the async loadConfig adapter");
 });
 
-await test("enabled sessionStart should replace the previous editor with pi-glance's owned factory", async () => {
+await test("enabled sessionStart should replace the previous editor with pi-glance-tps's owned factory", async () => {
 	const previousEditorFactory = (() => ({ kind: "previous-editor" })) as TestContext["editorFactories"][number];
 	const git = createGitHarness();
 	const test = createContext({ initialEditorFactory: previousEditorFactory });
@@ -256,11 +256,11 @@ await test("enabled sessionStart should replace the previous editor with pi-glan
 
 	harness.runtime.events.sessionStart({}, test.ctx);
 	const ownedEditorFactory = test.getCurrentEditorFactory();
-	assert.ok(ownedEditorFactory && ownedEditorFactory !== previousEditorFactory, "enabled sessionStart should replace the previous editor with pi-glance's owned factory");
+	assert.ok(ownedEditorFactory && ownedEditorFactory !== previousEditorFactory, "enabled sessionStart should replace the previous editor with pi-glance-tps's owned factory");
 
 	await harness.runtime.events.sessionShutdown({}, test.ctx as ExtensionContext);
-	assert.equal(test.getCurrentEditorFactory(), previousEditorFactory, "sessionShutdown should restore the editor factory that pi-glance replaced");
-	assert.deepEqual(test.surfaceCalls.slice(-2), ["setEditorComponent:install", "setFooter:clear"], "restoring a previous custom editor should use its original factory before clearing pi-glance's footer");
+	assert.equal(test.getCurrentEditorFactory(), previousEditorFactory, "sessionShutdown should restore the editor factory that pi-glance-tps replaced");
+	assert.deepEqual(test.surfaceCalls.slice(-2), ["setEditorComponent:install", "setFooter:clear"], "restoring a previous custom editor should use its original factory before clearing pi-glance-tps's footer");
 });
 
 await test("shutdown should leave a newer third-party editor factory untouched", async () => {
@@ -276,10 +276,10 @@ await test("shutdown should leave a newer third-party editor factory untouched",
 	await harness.runtime.events.sessionShutdown({}, test.ctx as ExtensionContext);
 
 	assert.equal(test.getCurrentEditorFactory(), externalEditorFactory, "shutdown should leave a newer third-party editor factory untouched");
-	assert.deepEqual(test.surfaceCalls.slice(surfaceBaseline), ["setFooter:clear"], "shutdown should not call setEditorComponent after pi-glance loses editor ownership");
+	assert.deepEqual(test.surfaceCalls.slice(surfaceBaseline), ["setFooter:clear"], "shutdown should not call setEditorComponent after pi-glance-tps loses editor ownership");
 });
 
-await test("a new session should replace pi-glance's own factory for the new context", async () => {
+await test("a new session should replace pi-glance-tps's own factory for the new context", async () => {
 	const previousEditorFactory = (() => ({ kind: "previous-editor" })) as TestContext["editorFactories"][number];
 	const git = createGitHarness();
 	const test = createContext({ initialEditorFactory: previousEditorFactory });
@@ -289,7 +289,7 @@ await test("a new session should replace pi-glance's own factory for the new con
 	const firstOwnedFactory = test.getCurrentEditorFactory();
 	harness.runtime.events.sessionStart({}, test.ctx);
 	const secondOwnedFactory = test.getCurrentEditorFactory();
-	assert.ok(firstOwnedFactory && secondOwnedFactory && firstOwnedFactory !== secondOwnedFactory, "a new session should replace pi-glance's own factory for the new context");
+	assert.ok(firstOwnedFactory && secondOwnedFactory && firstOwnedFactory !== secondOwnedFactory, "a new session should replace pi-glance-tps's own factory for the new context");
 
 	await harness.runtime.events.sessionShutdown({}, test.ctx as ExtensionContext);
 	assert.equal(test.getCurrentEditorFactory(), previousEditorFactory, "reinstalling for a new session should retain the original predecessor for restoration");
@@ -317,7 +317,7 @@ await test("runtime editor should honor Pi's false truecolor capability with ANS
 
 	await harness.runtime.commands.openPane("", test.ctx);
 	const paneRenderStyleContext = assertAmbientPaneOptions(harness.showPaneOptions[0], "terminal capability override");
-	assert.equal(paneRenderStyleContext.getTrueColor?.(), false, "/glance preview should receive the same lazy false truecolor capability");
+	assert.equal(paneRenderStyleContext.getTrueColor?.(), false, "/glance-tps preview should receive the same lazy false truecolor capability");
 });
 
 await test("editor and settings read the current Pi appearance lazily", async () => {
@@ -334,7 +334,7 @@ await test("editor and settings read the current Pi appearance lazily", async ()
 	currentPiTheme.name = "light";
 	const darkFrame = editor.render(100).join("\n");
 	assert.ok(darkFrame.includes(fg(PALETTES.dark.border, "╭")), "appearance selects the dark palette even when the name says light");
-	assert.equal(darkFrame.includes("<<pi-theme:"), false, "Glance uses its own palette");
+	assert.equal(darkFrame.includes("<<pi-theme:"), false, "GlanceTps uses its own palette");
 	currentPiTheme.appearance = "light";
 	assert.ok(editor.render(100).join("\n").includes(fg(PALETTES.light.border, "╭")), "later renders follow appearance changes");
 	test.setUiTheme(fakePiTheme("custom-light-theme", "dark"));
@@ -380,7 +380,7 @@ await test("model_select counter baseline should include the session_start entri
 	await harness.runtime.commands.openPane("", test.ctx);
 
 	const previewState = harness.showPanePreviewStates.at(-1);
-	assert.ok(previewState, "model_select smoke test should open /glance with preview state");
+	assert.ok(previewState, "model_select smoke test should open /glance-tps with preview state");
 	assert.equal(previewState.providers.availableCount, 1, "preview state should count providers from non-empty ctx.scopedModels instead of the full registry");
 	assert.equal(previewState.model.id, "claude-opus-4-20250514", "preview state should refresh model id after model_select");
 	assert.equal(previewState.model.provider, "anthropic", "preview state should refresh model provider after model_select");
@@ -388,8 +388,8 @@ await test("model_select counter baseline should include the session_start entri
 	assert.equal(previewState.context.tokens, 123_456, "preview state should refresh context tokens after model_select");
 	assert.equal(previewState.context.window, 500_000, "preview state should refresh context window after model_select");
 	assert.equal(previewState.context.percent, 24.6912, "preview state should refresh context percent after model_select");
-	assert.equal(test.getEntryReads(), entryBaseline, "opening /glance after model_select should not hide a session entries scan");
-	assert.equal(test.getBranchReads(), branchBaseline, "opening /glance after model_select should not hide a session branch scan");
+	assert.equal(test.getEntryReads(), entryBaseline, "opening /glance-tps after model_select should not hide a session entries scan");
+	assert.equal(test.getBranchReads(), branchBaseline, "opening /glance-tps after model_select should not hide a session branch scan");
 });
 
 await test("thinking_level_select counter baseline should include the session_start entries read", async () => {
@@ -429,7 +429,7 @@ await test("thinking_level_select counter baseline should include the session_st
 	await harness.runtime.commands.openPane("", test.ctx);
 
 	const previewState = harness.showPanePreviewStates.at(-1);
-	assert.ok(previewState, "thinking_level_select smoke test should open /glance with preview state");
+	assert.ok(previewState, "thinking_level_select smoke test should open /glance-tps with preview state");
 	assert.equal(previewState.providers.availableCount, 3, "thinking_level_select should refresh unique provider count through the cheap path");
 	assert.equal(previewState.model.id, "claude-opus-4-20250514", "thinking_level_select should refresh model id through the cheap path");
 	assert.equal(previewState.model.provider, "anthropic", "thinking_level_select should refresh model provider through the cheap path");
@@ -438,8 +438,8 @@ await test("thinking_level_select counter baseline should include the session_st
 	assert.equal(previewState.context.tokens, 99, "thinking_level_select should not overwrite context tokens when the plan does not refresh context usage");
 	assert.equal(previewState.context.window, 128_000, "thinking_level_select should preserve Context alongside its tokens and percentage");
 	assert.equal(previewState.context.percent, 0.077, "thinking_level_select should not overwrite context percent when the plan does not refresh context usage");
-	assert.equal(test.getEntryReads(), entryBaseline, "opening /glance after thinking_level_select should not hide a session entries scan");
-	assert.equal(test.getBranchReads(), branchBaseline, "opening /glance after thinking_level_select should not hide a session branch scan");
+	assert.equal(test.getEntryReads(), entryBaseline, "opening /glance-tps after thinking_level_select should not hide a session entries scan");
+	assert.equal(test.getBranchReads(), branchBaseline, "opening /glance-tps after thinking_level_select should not hide a session branch scan");
 });
 
 await test("turn_start counter baseline should include the session_start entries read", async () => {
@@ -470,7 +470,7 @@ await test("turn_start counter baseline should include the session_start entries
 	await harness.runtime.commands.openPane("", test.ctx);
 
 	const previewState = harness.showPanePreviewStates.at(-1);
-	assert.ok(previewState, "workspace/git smoke test should open /glance with preview state");
+	assert.ok(previewState, "workspace/git smoke test should open /glance-tps with preview state");
 	assert.equal(previewState.workspace.path, "/workspace/fresh-repo", "preview state should refresh workspace path after turn_start");
 	assert.equal(previewState.workspace.name, "fresh-repo", "preview state should refresh workspace display name after turn_start");
 	assert.equal(previewState.providers.availableCount, 2, "turn_start should refresh provider count through the lifecycle path");
@@ -481,8 +481,8 @@ await test("turn_start counter baseline should include the session_start entries
 	assert.equal(previewState.context.percent, 11, "turn_start should refresh context percent through the lifecycle path");
 	assert.equal(previewState.git.branch, "fresh-preview-branch", "preview state should include the latest matching git snapshot after workspace refresh");
 	assert.equal(previewState.git.status, "dirty", "preview state should include git snapshot status after workspace refresh");
-	assert.equal(test.getEntryReads(), entryBaseline, "opening /glance after turn_start should not hide a session entries scan");
-	assert.equal(test.getBranchReads(), branchBaseline, "opening /glance after turn_start should not hide a session branch scan");
+	assert.equal(test.getEntryReads(), entryBaseline, "opening /glance-tps after turn_start should not hide a session entries scan");
+	assert.equal(test.getBranchReads(), branchBaseline, "opening /glance-tps after turn_start should not hide a session branch scan");
 });
 
 await test("tool_execution_end counter baseline should include the session_start entries read", async () => {
@@ -520,7 +520,7 @@ await test("tool_execution_end counter baseline should include the session_start
 	await harness.runtime.commands.openPane("", test.ctx);
 
 	const previewState = harness.showPanePreviewStates.at(-1);
-	assert.ok(previewState, "tool_execution_end smoke test should open /glance with preview state");
+	assert.ok(previewState, "tool_execution_end smoke test should open /glance-tps with preview state");
 	assert.equal(previewState.workspace.path, "/workspace/tool-repo", "tool_execution_end should refresh workspace path through the lifecycle path");
 	assert.equal(previewState.workspace.name, "tool-repo", "tool_execution_end should refresh workspace display name through the lifecycle path");
 	assert.equal(previewState.providers.availableCount, 3, "tool_execution_end should refresh provider count through the lifecycle path");
@@ -530,8 +530,8 @@ await test("tool_execution_end counter baseline should include the session_start
 	assert.equal(previewState.context.window, 300_000, "tool_execution_end should refresh context window through the lifecycle path");
 	assert.equal(previewState.context.percent, 4.115, "tool_execution_end should refresh context percent through the lifecycle path");
 	assert.equal(previewState.git.branch, "tool-preview-branch", "tool_execution_end should accept matching new-cwd git snapshots");
-	assert.equal(test.getEntryReads(), entryBaseline, "opening /glance after tool_execution_end should not hide a session entries scan");
-	assert.equal(test.getBranchReads(), branchBaseline, "opening /glance after tool_execution_end should not hide a session branch scan");
+	assert.equal(test.getEntryReads(), entryBaseline, "opening /glance-tps after tool_execution_end should not hide a session entries scan");
+	assert.equal(test.getBranchReads(), branchBaseline, "opening /glance-tps after tool_execution_end should not hide a session branch scan");
 });
 
 await test("session_tree should remain a structural full entries reconciliation", async () => {
@@ -585,7 +585,7 @@ await test("session_compact public-facts test baseline should include session_st
 	assert.ok(test.getRenderRequests() > renderBaseline, "session_compact should request render after clearing context");
 	await harness.runtime.commands.openPane("", test.ctx);
 	let previewState = harness.showPanePreviewStates.at(-1);
-	assert.ok(previewState, "session_compact public context check should open /glance with preview state");
+	assert.ok(previewState, "session_compact public context check should open /glance-tps with preview state");
 	assert.deepEqual(previewState.usage, { input: 11, output: 22, cacheRead: 33, cacheWrite: 44, cost: 1 }, "session_compact should add public compaction-entry billed usage to prior totals");
 	assert.equal(previewState.context.tokens, null, "session_compact should display ctx.getContextUsage null tokens");
 	assert.equal(previewState.context.window, 100_000, "session_compact should preserve the public context window");
@@ -611,7 +611,7 @@ await test("session_compact public-facts test baseline should include session_st
 	assert.equal(test.getBranchReads(), branchAfterCompact, "lifecycle/message/turn_end/agent_end events should not directly scan branch");
 	await harness.runtime.commands.openPane("", test.ctx);
 	previewState = harness.showPanePreviewStates.at(-1);
-	assert.ok(previewState, "post-compact public context check should open /glance with preview state");
+	assert.ok(previewState, "post-compact public context check should open /glance-tps with preview state");
 	assert.equal(previewState.providers.availableCount, 2, "post-compact lifecycle refreshes should still update provider count");
 	assert.equal(previewState.model.id, "post-compact-model", "post-compact model_select should still update model id");
 	assert.equal(previewState.context.tokens, 88_000, "post-compact lifecycle refreshes should trust newly known public context tokens");
@@ -624,7 +624,7 @@ await test("session_compact public-facts test baseline should include session_st
 	assert.equal(test.getBranchReads(), branchBeforeKnownAssistant, "valid assistant context recovery should not scan branch");
 	await harness.runtime.commands.openPane("", test.ctx);
 	previewState = harness.showPanePreviewStates.at(-1);
-	assert.ok(previewState, "known public context refresh should open /glance with preview state");
+	assert.ok(previewState, "known public context refresh should open /glance-tps with preview state");
 	assert.equal(previewState.context.tokens, 55_000, "assistant message_end should refresh from ctx.getContextUsage");
 	assert.equal(previewState.context.window, 200_000, "assistant message_end should keep the public context window");
 	assert.equal(previewState.context.percent, 27.5, "assistant message_end should refresh the public context percent");
@@ -639,7 +639,7 @@ await test("session_compact public-facts test baseline should include session_st
 	assert.equal(test.getBranchReads(), branchBeforeFullSync, "session_tree should not duplicate ctx.getContextUsage with a branch scan");
 	await harness.runtime.commands.openPane("", test.ctx);
 	previewState = harness.showPanePreviewStates.at(-1);
-	assert.ok(previewState, "session_tree public-facts check should open /glance with preview state");
+	assert.ok(previewState, "session_tree public-facts check should open /glance-tps with preview state");
 	assert.deepEqual(previewState.usage, { input: 18, output: 20, cacheRead: 0, cacheWrite: 0, cost: 0.7 }, "session_tree should reconcile branch-summary billed usage from the session ledger");
 	assert.equal(previewState.context.tokens, 66_000, "session_tree should trust public context tokens regardless of raw branch shape");
 	assert.equal(previewState.context.percent, 33, "session_tree should trust public context percent regardless of raw branch shape");
@@ -675,7 +675,7 @@ await test("assistant message_end counter baseline should include the session_st
 	assert.ok(test.getRenderRequests() > renderBaseline, "assistant message_end should still request a render");
 	await harness.runtime.commands.openPane("", test.ctx);
 	let previewState = harness.showPanePreviewStates.at(-1);
-	assert.ok(previewState, "assistant message_end should open /glance with preview state");
+	assert.ok(previewState, "assistant message_end should open /glance-tps with preview state");
 	assert.deepEqual(previewState.usage, { input: 2, output: 3, cacheRead: 4, cacheWrite: 5, cost: 0.5 }, "assistant message_end should add message-level usage with cost.total semantics");
 
 	await harness.runtime.events.messageEnd(
@@ -684,7 +684,7 @@ await test("assistant message_end counter baseline should include the session_st
 	);
 	await harness.runtime.commands.openPane("", test.ctx);
 	previewState = harness.showPanePreviewStates.at(-1);
-	assert.ok(previewState, "duplicate responseId check should open /glance with preview state");
+	assert.ok(previewState, "duplicate responseId check should open /glance-tps with preview state");
 	assert.deepEqual(previewState.usage, { input: 2, output: 3, cacheRead: 4, cacheWrite: 5, cost: 0.5 }, "assistant message_end should dedupe repeated responseId deltas");
 
 	const objectIdentityMessage = assistantMessage({ usage: { input: 7, output: 8, cacheRead: 9, cacheWrite: 10, cost: { input: 0.1, output: 0.2, cacheRead: 0.3, cacheWrite: 0.4 } } });
@@ -692,7 +692,7 @@ await test("assistant message_end counter baseline should include the session_st
 	await harness.runtime.events.messageEnd({ message: objectIdentityMessage }, test.ctx as ExtensionContext);
 	await harness.runtime.commands.openPane("", test.ctx);
 	previewState = harness.showPanePreviewStates.at(-1);
-	assert.ok(previewState, "object identity dedupe check should open /glance with preview state");
+	assert.ok(previewState, "object identity dedupe check should open /glance-tps with preview state");
 	assert.deepEqual(previewState.usage, { input: 9, output: 11, cacheRead: 13, cacheWrite: 15, cost: 1.5 }, "assistant message_end should add component-cost fallback once for duplicate object events");
 	assert.equal(test.getEntryReads(), entryBaseline, "assistant message_end duplicate checks should still avoid entries scans");
 	assert.equal(test.getBranchReads(), branchBaseline, "assistant message_end duplicate checks should still avoid branch scans");
@@ -705,7 +705,7 @@ await test("assistant message_end counter baseline should include the session_st
 	await harness.runtime.events.messageEnd({ message: { ...nestedToolResult } }, test.ctx as ExtensionContext);
 	await harness.runtime.commands.openPane("", test.ctx);
 	previewState = harness.showPanePreviewStates.at(-1);
-	assert.ok(previewState, "usage-bearing toolResult message_end should open /glance with preview state");
+	assert.ok(previewState, "usage-bearing toolResult message_end should open /glance-tps with preview state");
 	assert.deepEqual(previewState.usage, { input: 20, output: 23, cacheRead: 26, cacheWrite: 29, cost: 2.6 }, "toolResult message_end should add nested billed usage once and dedupe by toolCallId");
 	assert.equal(test.getEntryReads(), entryBaseline, "toolResult message_end should remain incremental without entries scans");
 	assert.equal(test.getBranchReads(), branchBaseline, "toolResult message_end should not directly scan branch");
@@ -721,7 +721,7 @@ await test("assistant message_end counter baseline should include the session_st
 	assert.equal(git.options?.getCwd(), "/workspace/turn-end-repo", "git refresher getCwd should expose the refreshed turn_end workspace");
 	await harness.runtime.commands.openPane("", test.ctx);
 	previewState = harness.showPanePreviewStates.at(-1);
-	assert.ok(previewState, "turn_end narrow refresh check should open /glance with preview state");
+	assert.ok(previewState, "turn_end narrow refresh check should open /glance-tps with preview state");
 	assert.equal(previewState.workspace.path, "/workspace/turn-end-repo", "turn_end should still refresh workspace through the lifecycle path");
 	assert.equal(previewState.context.tokens, 22_000, "turn_end should still refresh context tokens through the lifecycle path");
 	assert.deepEqual(previewState.usage, { input: 20, output: 23, cacheRead: 26, cacheWrite: 29, cost: 2.6 }, "turn_end should preserve complete incremental session usage without full entries reconciliation");
@@ -739,7 +739,7 @@ await test("assistant message_end counter baseline should include the session_st
 	assert.equal(git.options?.getCwd(), "/workspace/agent-end-repo", "git refresher getCwd should expose the refreshed agent_end workspace");
 	await harness.runtime.commands.openPane("", test.ctx);
 	previewState = harness.showPanePreviewStates.at(-1);
-	assert.ok(previewState, "agent_end narrow refresh check should open /glance with preview state");
+	assert.ok(previewState, "agent_end narrow refresh check should open /glance-tps with preview state");
 	assert.equal(previewState.workspace.path, "/workspace/agent-end-repo", "agent_end should still refresh workspace through the lifecycle path");
 	assert.equal(previewState.context.tokens, 33_000, "agent_end should still refresh context tokens through the lifecycle path");
 	assert.deepEqual(previewState.usage, { input: 20, output: 23, cacheRead: 26, cacheWrite: 29, cost: 2.6 }, "agent_end should preserve complete incremental session usage without full entries reconciliation");
@@ -763,8 +763,8 @@ await test("save failure should notify the exact error copy", async () => {
 	const renderBaseline = test.getRenderRequests();
 	await harness.runtime.commands.openPane("", test.ctx);
 
-	assert.equal(hasNotification(test.notifications, "pi-glance configuration save failed; keeping previous configuration", "error"), true, "save failure should notify the exact error copy");
-	assert.equal(hasNotification(test.notifications, "pi-glance configuration saved", "info"), false, "save failure should not notify success");
+	assert.equal(hasNotification(test.notifications, "pi-glance-tps configuration save failed; keeping previous configuration", "error"), true, "save failure should notify the exact error copy");
+	assert.equal(hasNotification(test.notifications, "pi-glance-tps configuration saved", "info"), false, "save failure should not notify success");
 	assert.deepEqual(test.surfaceCalls.slice(surfaceBaseline), [], "save failure should not reinstall or clear the input surface");
 	assert.deepEqual(git.schedules.slice(scheduleBaseline), [], "save failure should not schedule git refreshes");
 	assert.equal(test.getRenderRequests(), renderBaseline, "save failure should not request a render");
@@ -779,7 +779,7 @@ await test("save failure should notify the exact error copy", async () => {
 });
 
 await test("invalid config load should notify its diagnostic once at session start", async () => {
-	const diagnostic = "pi-glance configuration is invalid; using defaults without replacing the broken file";
+	const diagnostic = "pi-glance-tps configuration is invalid; using defaults without replacing the broken file";
 	const initialConfig = defaultConfig();
 	const nextConfig = disabledConfig(initialConfig);
 	const git = createGitHarness();
@@ -796,18 +796,18 @@ await test("invalid config load should notify its diagnostic once at session sta
 	const notificationBaseline = test.notifications.length;
 	await harness.runtime.commands.openPane("", test.ctx);
 
-	assert.deepEqual(harness.savedConfigs, [], "read-only fallback config should block /glance from overwriting the existing file");
+	assert.deepEqual(harness.savedConfigs, [], "read-only fallback config should block /glance-tps from overwriting the existing file");
 	assert.equal(
-		hasNotification(test.notifications.slice(notificationBaseline), "pi-glance configuration save blocked to protect the existing file; fix or remove it, then /reload", "error"),
+		hasNotification(test.notifications.slice(notificationBaseline), "pi-glance-tps configuration save blocked to protect the existing file; fix or remove it, then /reload", "error"),
 		true,
 		"blocked save should explain how to recover",
 	);
-	assert.equal(test.notifications.filter((notification) => notification.message === diagnostic).length, 1, "opening /glance should not repeat an already reported load diagnostic");
+	assert.equal(test.notifications.filter((notification) => notification.message === diagnostic).length, 1, "opening /glance-tps should not repeat an already reported load diagnostic");
 	assert.deepEqual(test.surfaceCalls.slice(surfaceBaseline), [], "blocked save should preserve the active input surface");
 });
 
 await test("future config load should warn without treating known fields as a runtime failure", async () => {
-	const diagnostic = "pi-glance configuration version 12 is newer than supported version 11";
+	const diagnostic = "pi-glance-tps configuration version 12 is newer than supported version 11";
 	const initialConfig = defaultConfig();
 	const git = createGitHarness();
 	const test = createContext();
@@ -851,8 +851,8 @@ await test("saveConfig should receive the pane result config before active confi
 	await harness.runtime.commands.openPane("", test.ctx);
 
 	assert.deepEqual(harness.savedConfigs, [nextConfig], "save success should pass the next config to saveConfig");
-	assert.equal(hasNotification(test.notifications, "pi-glance configuration saved", "info"), true, "save success should notify saved");
-	assert.equal(harness.showPaneContexts[0], test.ctx, "showPane should receive the command context passed to /glance");
+	assert.equal(hasNotification(test.notifications, "pi-glance-tps configuration saved", "info"), true, "save success should notify saved");
+	assert.equal(harness.showPaneContexts[0], test.ctx, "showPane should receive the command context passed to /glance-tps");
 	assert.equal(harness.showPanePreviewStates[0]?.workspace.path, "/repo", "showPane should receive the current runtime state for preview rendering");
 	assertAmbientPaneOptions(harness.showPaneOptions[0], "default pane open");
 	assert.deepEqual(test.surfaceCalls.slice(surfaceBaseline), [], "enabled->enabled save success should keep the existing TUI input surface installed");
@@ -995,7 +995,7 @@ await test("disabled-start save failure should notify the exact error copy", asy
 	const surfaceBaseline = test.surfaceCalls.length;
 	await harness.runtime.commands.openPane("", test.ctx);
 
-	assert.equal(hasNotification(test.notifications, "pi-glance configuration save failed; keeping previous configuration", "error"), true, "disabled-start save failure should notify the exact error copy");
+	assert.equal(hasNotification(test.notifications, "pi-glance-tps configuration save failed; keeping previous configuration", "error"), true, "disabled-start save failure should notify the exact error copy");
 	assert.deepEqual(harness.savedConfigs, [], "disabled-start failed save should not record a persisted config");
 	assert.deepEqual(test.surfaceCalls.slice(surfaceBaseline), [], "disabled-start save failure should not install or clear the input surface");
 	assert.equal(git.created, 0, "disabled-start save failure should not create a git refresher");
@@ -1021,7 +1021,7 @@ for (const startingEnabled of [true, false] as const) {
 	const renderBaseline = test.getRenderRequests();
 	await harness.runtime.commands.openPane("", test.ctx);
 
-	assert.equal(hasNotification(test.notifications, "pi-glance configuration cancelled", "info"), true, `${startingEnabled ? "enabled" : "disabled"} cancel should notify cancellation`);
+	assert.equal(hasNotification(test.notifications, "pi-glance-tps configuration cancelled", "info"), true, `${startingEnabled ? "enabled" : "disabled"} cancel should notify cancellation`);
 	assert.deepEqual(harness.savedConfigs, [], `${startingEnabled ? "enabled" : "disabled"} cancel should not save config`);
 	assert.deepEqual(test.surfaceCalls.slice(surfaceBaseline), [], `${startingEnabled ? "enabled" : "disabled"} cancel should not install or clear the surface`);
 	assert.deepEqual(git.schedules.slice(scheduleBaseline), [], `${startingEnabled ? "enabled" : "disabled"} cancel should not schedule git refreshes`);
@@ -1207,17 +1207,17 @@ for (const mode of ["rpc", "json", "print"] as const) {
 	assert.deepEqual(test.surfaceCalls, [], `${mode} mode should not touch TUI surface APIs across lifecycle events even when hasUI/theme exist`);
 	assert.equal(git.created, 0, `${mode} mode should not create the TUI-only git refresher across lifecycle events`);
 	assert.equal(test.getThemeReads(), 0, `${mode} mode should not read the current UI theme because TUI-only provider paths are skipped`);
-	assert.deepEqual(harness.showPaneInitials, [], `${mode} /glance should not invoke the custom pane adapter`);
-	assert.equal(hasNotification(test.notifications, "pi-glance configuration pane requires TUI mode", "error"), true, `${mode} /glance should notify that the pane requires TUI mode`);
+	assert.deepEqual(harness.showPaneInitials, [], `${mode} /glance-tps should not invoke the custom pane adapter`);
+	assert.equal(hasNotification(test.notifications, "pi-glance-tps configuration pane requires TUI mode", "error"), true, `${mode} /glance-tps should notify that the pane requires TUI mode`);
 }
 
-await test("TUI /glance should still open after provider-count snapshot setup", async () => {
+await test("TUI /glance-tps should still open after provider-count snapshot setup", async () => {
 	const test = createContext({ availableProviders: ["openai", "anthropic", "openai"] });
 	const harness = createRuntimeHarness({ loadConfigSyncConfig: defaultConfig(), showPaneResults: [{ action: "cancel" }] });
 
 	harness.runtime.events.sessionStart({}, test.ctx);
 	await harness.runtime.commands.openPane("", test.ctx);
-	assert.equal(harness.showPaneInitials.length, 1, "TUI /glance should still open after provider-count snapshot setup");
+	assert.equal(harness.showPaneInitials.length, 1, "TUI /glance-tps should still open after provider-count snapshot setup");
 	assert.equal(harness.showPanePreviewStates[0]?.providers.availableCount, 2, "showPane preview state should include current unique provider count");
 	assertAmbientPaneOptions(harness.showPaneOptions[0], "provider-count snapshot pane open");
 });

@@ -2,7 +2,7 @@ import { strict as assert } from "node:assert";
 import { test } from "node:test";
 import { defaultConfig } from "../../src/config/model.js";
 import { WORKING_SWEEP_COLOR_VALUES } from "../../src/config/options.js";
-import { GlanceEditor } from "../../src/surface/editor.js";
+import { GlanceTpsEditor } from "../../src/surface/editor.js";
 import type { EditorTheme, TUI } from "@earendil-works/pi-tui";
 import { visibleWidth } from "@earendil-works/pi-tui";
 import type { KeybindingsManager } from "@earendil-works/pi-coding-agent";
@@ -31,7 +31,7 @@ test("live and preview frames agree for every color, with no stale colors when r
 	let config = defaultConfig(); config.editor.activityMode = "sweep";
 	let now = 0;
 	const statuses = new Map([["external", "\x1b[31mExternal ready\x1b[0m"]]);
-	const editor = new GlanceEditor({ terminal: { rows: 24 }, requestRender() {} } as unknown as TUI,
+	const editor = new GlanceTpsEditor({ terminal: { rows: 24 }, requestRender() {} } as unknown as TUI,
 		theme, { matches: () => false } as unknown as KeybindingsManager, () => state, () => config,
 		{ animationNowMs: () => now, scheduleAnimationFrame: () => () => {}, getExtensionStatuses: () => statuses });
 	editor.focused = true; editor.setText("untouched input");

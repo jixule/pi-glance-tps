@@ -41,7 +41,7 @@ test("v8 and v9 migration preserve choices without mutating the source", () => {
 });
 
 test("loading old configs never rewrites them; explicit save persists the selected mode", async () => {
-	const directory = await mkdtemp(join(tmpdir(), "glance-working-config-"));
+	const directory = await mkdtemp(join(tmpdir(), "glance-tps-working-config-"));
 	try {
 		const path = join(directory, "config.json");
 		for (const version of [8, 9]) for (const workingSweep of [true, false]) {

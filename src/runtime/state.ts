@@ -1,10 +1,10 @@
 import { displayDirectory, shortenModel } from "../surface/format.js";
 import { emptyGitSnapshot, gitSnapshotsEqual } from "./git-snapshot.js";
 import type { StateInputs } from "./snapshot.js";
-import type { GitSnapshot, GlanceConfig, GlanceState, ModelSpeedMeasurement, UsageTotals } from "../types.js";
+import type { GitSnapshot, GlanceTpsConfig, GlanceTpsState, LiveSpeedReading, ModelSpeedMeasurement, UsageTotals } from "../types.js";
 
-export function createInitialState(inputs: StateInputs, config: GlanceConfig): GlanceState {
-	const state: GlanceState = {
+export function createInitialState(inputs: StateInputs, config: GlanceTpsConfig): GlanceTpsState {
+	const state: GlanceTpsState = {
 		workspace: {
 			name: displayDirectory(inputs.cwd),
 			path: inputs.cwd,
@@ -29,13 +29,14 @@ export function createInitialState(inputs: StateInputs, config: GlanceConfig): G
 			lastRun: null,
 			currentRun: null,
 		},
+		liveSpeed: null,
 		version: 0,
 	};
 	refreshContextUsage(state, inputs);
 	return state;
 }
 
-function touch(state: GlanceState): void {
+function touch(state: GlanceTpsState): void {
 	state.version++;
 }
 
@@ -53,32 +54,49 @@ function modelSpeedEqual(a: ModelSpeedMeasurement | null, b: ModelSpeedMeasureme
 	);
 }
 
-export function setLastRunModelSpeed(state: GlanceState, next: ModelSpeedMeasurement | null): boolean {
+export function setLastRunModelSpeed(state: GlanceTpsState, next: ModelSpeedMeasurement | null): boolean {
 	if (modelSpeedEqual(state.throughput.lastRun, next)) return false;
 	state.throughput.lastRun = next;
 	touch(state);
 	return true;
 }
 
-export function setCurrentRunModelSpeed(state: GlanceState, next: ModelSpeedMeasurement | null): boolean {
+export function setCurrentRunModelSpeed(state: GlanceTpsState, next: ModelSpeedMeasurement | null): boolean {
 	if (modelSpeedEqual(state.throughput.currentRun, next)) return false;
 	state.throughput.currentRun = next;
 	touch(state);
 	return true;
 }
 
-export function clearCurrentRunModelSpeed(state: GlanceState): boolean {
+export function clearCurrentRunModelSpeed(state: GlanceTpsState): boolean {
 	return setCurrentRunModelSpeed(state, null);
 }
 
-export function setUsageTotals(state: GlanceState, usage: UsageTotals): boolean {
+function liveSpeedEqual(a: LiveSpeedReading | null, b: LiveSpeedReading | null): boolean {
+	if (a === b) return true;
+	if (!a || !b) return false;
+	return (
+		a.tokensPerSecond === b.tokensPerSecond &&
+		a.generating === b.generating &&
+		a.spinnerFrame === b.spinnerFrame
+	);
+}
+
+export function setLiveSpeed(state: GlanceTpsState, next: LiveSpeedReading | null): boolean {
+	if (liveSpeedEqual(state.liveSpeed, next)) return false;
+	state.liveSpeed = next;
+	touch(state);
+	return true;
+}
+
+export function setUsageTotals(state: GlanceTpsState, usage: UsageTotals): boolean {
 	if (usageTotalsEqual(state.usage, usage)) return false;
 	state.usage = usage;
 	touch(state);
 	return true;
 }
 
-export function addUsageTotals(state: GlanceState, delta: UsageTotals): boolean {
+export function addUsageTotals(state: GlanceTpsState, delta: UsageTotals): boolean {
 	if (delta.input === 0 && delta.output === 0 && delta.cacheRead === 0 && delta.cacheWrite === 0 && delta.cost === 0) return false;
 	state.usage = {
 		input: state.usage.input + delta.input,
@@ -91,14 +109,14 @@ export function addUsageTotals(state: GlanceState, delta: UsageTotals): boolean 
 	return true;
 }
 
-export function setProviderCount(state: GlanceState, availableCount: number): boolean {
+export function setProviderCount(state: GlanceTpsState, availableCount: number): boolean {
 	if (state.providers.availableCount === availableCount) return false;
 	state.providers.availableCount = availableCount;
 	touch(state);
 	return true;
 }
 
-export function refreshWorkspace(state: GlanceState, inputs: Pick<StateInputs, "cwd">): boolean {
+export function refreshWorkspace(state: GlanceTpsState, inputs: Pick<StateInputs, "cwd">): boolean {
 	const cwd = inputs.cwd;
 	if (state.workspace.path === cwd) return false;
 	state.workspace = {
@@ -110,7 +128,7 @@ export function refreshWorkspace(state: GlanceState, inputs: Pick<StateInputs, "
 	return true;
 }
 
-export function setGitSnapshot(state: GlanceState, cwd: string, snapshot: GitSnapshot): boolean {
+export function setGitSnapshot(state: GlanceTpsState, cwd: string, snapshot: GitSnapshot): boolean {
 	if (state.workspace.path !== cwd) return false;
 	if (gitSnapshotsEqual(state.git, snapshot)) {
 		state.git.updatedAt = snapshot.updatedAt;
@@ -121,7 +139,7 @@ export function setGitSnapshot(state: GlanceState, cwd: string, snapshot: GitSna
 	return true;
 }
 
-export function refreshContextUsage(state: GlanceState, inputs: Pick<StateInputs, "contextUsage" | "model">): boolean {
+export function refreshContextUsage(state: GlanceTpsState, inputs: Pick<StateInputs, "contextUsage" | "model">): boolean {
 	const usage = inputs.contextUsage;
 	const tokens = usage?.tokens ?? null;
 	const window = usage?.contextWindow ?? inputs.model?.contextWindow ?? 0;
@@ -134,7 +152,7 @@ export function refreshContextUsage(state: GlanceState, inputs: Pick<StateInputs
 	return true;
 }
 
-export function refreshModel(state: GlanceState, inputs: Pick<StateInputs, "model" | "thinkingLevel">, config: GlanceConfig): boolean {
+export function refreshModel(state: GlanceTpsState, inputs: Pick<StateInputs, "model" | "thinkingLevel">, config: GlanceTpsConfig): boolean {
 	const id = inputs.model?.id;
 	const provider = inputs.model?.provider;
 	const displayName = shortenModel(inputs.model?.id, config.model.customNames, inputs.model?.name);

@@ -1,7 +1,7 @@
 import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { defaultConfig } from "../../src/config/model.js";
 import type { StateSessionEntry } from "../../src/runtime/snapshot.js";
-import type { GitSnapshot, GlanceConfig } from "../../src/types.js";
+import type { GitSnapshot, GlanceTpsConfig } from "../../src/types.js";
 
 export interface MutableModelInfo {
 	id?: string;
@@ -36,8 +36,8 @@ export interface RuntimeRefreshContextHarness {
 	setAvailableProviders(providers: readonly string[]): void;
 }
 
-export function cloneConfig(config: GlanceConfig = defaultConfig()): GlanceConfig {
-	return JSON.parse(JSON.stringify(config)) as GlanceConfig;
+export function cloneConfig(config: GlanceTpsConfig = defaultConfig()): GlanceTpsConfig {
+	return JSON.parse(JSON.stringify(config)) as GlanceTpsConfig;
 }
 
 export function message(role: string, options: { usage?: Record<string, unknown>; stopReason?: string; responseId?: string; toolCallId?: string } = {}): StateSessionEntry {

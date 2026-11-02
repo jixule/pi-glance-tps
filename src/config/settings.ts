@@ -1,4 +1,4 @@
-import type { GlanceConfig } from "../types.js";
+import type { GlanceTpsConfig } from "../types.js";
 
 export interface SettingOption {
 	label: string;
@@ -12,9 +12,9 @@ export interface SettingDescriptor {
 	hint: string;
 	kind: "toggle" | "choice";
 	options: readonly SettingOption[];
-	value(config: GlanceConfig): string;
-	selectedIndex(config: GlanceConfig): number;
-	select(config: GlanceConfig, index: number): void;
+	value(config: GlanceTpsConfig): string;
+	selectedIndex(config: GlanceTpsConfig): number;
+	select(config: GlanceTpsConfig, index: number): void;
 }
 
 export function choiceSetting<T extends string | number | boolean>(
@@ -22,8 +22,8 @@ export function choiceSetting<T extends string | number | boolean>(
 	label: string,
 	hint: string,
 	options: readonly (SettingOption & { value: T })[],
-	read: (config: GlanceConfig) => T,
-	write: (config: GlanceConfig, value: T) => void,
+	read: (config: GlanceTpsConfig) => T,
+	write: (config: GlanceTpsConfig, value: T) => void,
 	format: (value: T) => string = String,
 ): SettingDescriptor {
 	return {
@@ -51,8 +51,8 @@ export function toggleSetting(
 	id: string,
 	label: string,
 	hint: string,
-	read: (config: GlanceConfig) => boolean,
-	write: (config: GlanceConfig, value: boolean) => void,
+	read: (config: GlanceTpsConfig) => boolean,
+	write: (config: GlanceTpsConfig, value: boolean) => void,
 ): SettingDescriptor {
 	return {
 		...choiceSetting(

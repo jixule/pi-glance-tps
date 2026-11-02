@@ -1,6 +1,6 @@
 {
-  "name": "pi-glance",
-  "version": "0.7.7",
+  "name": "pi-glance-tps",
+  "version": "0.1.0",
   "description": "A rounded editor and adaptive status line for Pi.",
   "keywords": [
     "pi-package",
@@ -17,17 +17,24 @@
   "engines": {
     "node": ">=22.19.0"
   },
-  "author": "linys77",
+  "author": "pi-glance-tps contributors (fork of pi-glance by linys77)",
   "contributors": [
-    { "name": "derekszen", "url": "https://github.com/derekszen" }
+    {
+      "name": "linys77",
+      "url": "https://github.com/LinYS77"
+    },
+    {
+      "name": "derekszen",
+      "url": "https://github.com/derekszen"
+    }
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/LinYS77/pi-glance.git"
+    "url": "git+https://github.com/jixule/pi-glance-tps.git"
   },
-  "homepage": "https://github.com/LinYS77/pi-glance#readme",
+  "homepage": "https://github.com/jixule/pi-glance-tps#readme",
   "bugs": {
-    "url": "https://github.com/LinYS77/pi-glance/issues"
+    "url": "https://github.com/jixule/pi-glance-tps/issues"
   },
   "files": [
     "index.ts",
@@ -39,7 +46,7 @@
     "extensions": [
       "./index.ts"
     ],
-    "image": "https://raw.githubusercontent.com/LinYS77/pi-glance/main/assets/themes.gif"
+    "image": "https://raw.githubusercontent.com/jixule/pi-glance-tps/main/assets/themes.gif"
   },
   "peerDependencies": {
     "@earendil-works/pi-ai": ">=1.0.0",
@@ -62,7 +69,7 @@
     "build:dev": "npm run clean --silent && tsc -p tsconfig.test.json",
     "test": "npm run test:dev",
     "test:boundaries": "npm run build:dev --silent && node .tmp-test/tests/architecture/test-boundaries.js",
-    "test:command-save": "npm run build:dev --silent && node .tmp-test/tests/settings/test-glance-command-save.js",
+    "test:command-save": "npm run build:dev --silent && node .tmp-test/tests/settings/test-glance-tps-command-save.js",
     "test:config": "npm run build:dev --silent && node --test .tmp-test/tests/config/test-*.js",
     "test:config-schema": "npm run build:dev --silent && node .tmp-test/tests/config/test-config-schema.js",
     "test:config-io": "npm run build:dev --silent && node .tmp-test/tests/config/test-config-io.js",

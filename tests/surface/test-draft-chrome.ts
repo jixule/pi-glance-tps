@@ -3,14 +3,14 @@ import { test } from "node:test";
 import { visibleWidth } from "@earendil-works/pi-tui";
 import { defaultConfig } from "../../src/config/model.js";
 import { renderInputSurfaceFrame } from "../../src/surface/frame.js";
-import { resolveBuiltInGlanceStyles, type TextStyler } from "../../src/theme/adapter.js";
+import { resolveBuiltInGlanceTpsStyles, type TextStyler } from "../../src/theme/adapter.js";
 import { stripControls } from "../../src/surface/format.js";
 import { testState } from "../support/helpers.js";
 
 function frame(width: number, icons: "plain" | "nerd", extra: Record<string, unknown> = {}) {
 	const config = defaultConfig(); config.icons = icons; config.editor.topMarginRows = 0;
 	return renderInputSurfaceFrame({
-		state: testState(), config, width, styles: resolveBuiltInGlanceStyles("dark"),
+		state: testState(), config, width, styles: resolveBuiltInGlanceTpsStyles("dark"),
 		body: { kind: "preview" }, chrome: { hasDraft: true, ...extra },
 	}).map(stripControls);
 }
@@ -41,7 +41,7 @@ test("a long draft hint does not create a dark pause in the full-border sweep", 
 	const config = defaultConfig(); config.icons = "plain"; config.editor.topMarginRows = 0;
 	config.editor.activityMode = "sweep";
 	config.editor.stashShortcut = "ctrl+shift+alt+super+pageDown";
-	const styles = resolveBuiltInGlanceStyles("dark");
+	const styles = resolveBuiltInGlanceTpsStyles("dark");
 	let lit = false;
 	const observed = { ...styles, highlight: (style: TextStyler, amount: number) => amount > 0.01
 		? (text: string) => { if (/\S/.test(text)) lit = true; return style(text); }

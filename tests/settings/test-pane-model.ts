@@ -12,7 +12,7 @@ const selected = (model: PaneModelState) => createPaneViewModel(model).rows.find
 test("first row edits immediately; source config and loaded-key order never create false dirty state", () => {
 	const config = defaultConfig(), initial = createPaneModel(config);
 	assert.equal(initial.section, "appearance");
-	assert.equal(selected(initial).label, "Glance");
+	assert.equal(selected(initial).label, "GlanceTps");
 	assert.equal(paneIsDirty(initial), false);
 	const changed = step(initial, { type: "activate" });
 	assert.equal(changed.draft.enabled, false);
@@ -29,7 +29,7 @@ test("four sections keep their selected row and expose only task-relevant contro
 	let model = down(createPaneModel(defaultConfig()), 3);
 	assert.equal(selected(model).label, "Icons");
 	model = section(model);
-	assert.deepEqual(createPaneViewModel(model).rows.map(row => row.label), ["Git", "Cost", "Output throughput", "Context", "Tokens", "Extensions", "Model"]);
+	assert.deepEqual(createPaneViewModel(model).rows.map(row => row.label), ["Git", "Cost", "Live speed", "Context", "Tokens", "Extensions", "Model"]);
 	model = section(model);
 	assert.deepEqual(createPaneViewModel(model).rows.map(row => row.label), ["Display mode", "Effect area", "Sweep speed", "Effect color", "Compaction / summary speed", "Retry blink rate"]);
 	assert.equal(createPaneViewModel(model).preview.activity, "working");
@@ -39,7 +39,7 @@ test("four sections keep their selected row and expose only task-relevant contro
 	model = section(model);
 	assert.equal(selected(model).label, "Icons");
 	assert.equal(createPaneViewModel(model).preview.activity, undefined);
-	assert.equal(selected(step(model, { type: "move", direction: "up", amount: 3 })).label, "Glance");
+	assert.equal(selected(step(model, { type: "move", direction: "up", amount: 3 })).label, "GlanceTps");
 });
 
 test("status visibility, order and detail navigation are separate actions", () => {

@@ -9,7 +9,7 @@ import { collectGitSnapshot } from "../../src/runtime/git.js";
 import { parseGitDiffStat } from "../../src/runtime/git-snapshot.js";
 
 function repository() {
-	const root = mkdtempSync(join(tmpdir(), "glance-git-cases-"));
+	const root = mkdtempSync(join(tmpdir(), "glance-tps-git-cases-"));
 	const git = (...args: string[]) => execFileSync("git", ["-C", root, "-c", "core.hooksPath=/dev/null", ...args], { stdio: "pipe" });
 	git("init", "-qb", "main");
 	const commit = () => git("-c", "user.name=Test", "-c", "user.email=test@example.invalid", "commit", "-qm", "base");

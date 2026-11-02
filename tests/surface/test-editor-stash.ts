@@ -4,7 +4,7 @@ import type { KeybindingsManager } from "@earendil-works/pi-coding-agent";
 import { type TUI, visibleWidth } from "@earendil-works/pi-tui";
 import { defaultConfig } from "../../src/config/model.js";
 import { PromptStash } from "../../src/input/stash.js";
-import { GlanceEditor } from "../../src/surface/editor.js";
+import { GlanceTpsEditor } from "../../src/surface/editor.js";
 import { testState } from "../support/helpers.js";
 
 const identity = (s: string) => s;
@@ -13,7 +13,7 @@ const theme = { borderColor: identity, selectList: { selectedPrefix: identity, s
 test("Alt+S keeps expanded long pastes, swaps drafts, and shows a width-safe hint only while occupied", () => {
 	const config = defaultConfig(); config.icons = "plain";
 	const stash = new PromptStash(null, () => {});
-	const editor = new GlanceEditor({ terminal: { rows: 40 }, requestRender() {} } as unknown as TUI,
+	const editor = new GlanceTpsEditor({ terminal: { rows: 40 }, requestRender() {} } as unknown as TUI,
 		theme, { matches: () => false, getEffectiveConfig: () => ({}) } as unknown as KeybindingsManager,
 		() => testState(), () => config, { stash });
 	editor.focused = true;

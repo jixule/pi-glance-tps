@@ -1,6 +1,6 @@
 import { strict as assert } from "node:assert";
 import { test } from "node:test";
-import type { GlanceEditor } from "../../src/surface/editor.js";
+import type { GlanceTpsEditor } from "../../src/surface/editor.js";
 import { createGitHarness, createRuntimeHarness, createRuntimeTestContext, invokeEditorFactory, loadedConfigResult } from "../support/runtime-harness.js";
 
 for (const mode of ["rpc", "json", "print"] as const) test(`${mode} does not read drafts or start background Git`, async () => {
@@ -17,7 +17,7 @@ test("no-session Stash works in memory without reading or saving personal drafts
 	const h = createRuntimeHarness({ git: createGitHarness(), loadDraft: () => { throw new Error("must not read"); }, saveDraft: () => { throw new Error("must not write"); } });
 	const ctx = createRuntimeTestContext({ persistent: false });
 	h.runtime.events.sessionStart({}, ctx.ctx);
-	const editor = invokeEditorFactory(ctx, 0, () => {}, { matches: () => false, getEffectiveConfig: () => ({}) } as never) as GlanceEditor;
+	const editor = invokeEditorFactory(ctx, 0, () => {}, { matches: () => false, getEffectiveConfig: () => ({}) } as never) as GlanceTpsEditor;
 	editor.focused = true; editor.setText("memory only"); editor.handleInput("\x1bs");
 	assert.equal(editor.getText(), ""); editor.handleInput("\x1bs");
 	assert.equal(editor.getText(), "memory only"); assert.deepEqual(ctx.notifications, []);

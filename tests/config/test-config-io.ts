@@ -5,7 +5,7 @@ import { dirname, join } from "node:path";
 import { test } from "node:test";
 import { configFromText, configToText, defaultConfig, normalizeConfig } from "../../src/config/model.js";
 import { createConfigStore, type ConfigLoadResult, type ConfigLoadStatus } from "../../src/config/store.js";
-import type { GlanceConfig } from "../../src/types.js";
+import type { GlanceTpsConfig } from "../../src/types.js";
 
 async function writeConfigText(configPath: string, text: string): Promise<void> {
 	await mkdir(dirname(configPath), { recursive: true });
@@ -14,7 +14,7 @@ async function writeConfigText(configPath: string, text: string): Promise<void> 
 
 function assertLoadResult(
 	actual: ConfigLoadResult,
-	expected: { config: GlanceConfig; status: ConfigLoadStatus; writable: boolean; diagnostic?: RegExp },
+	expected: { config: GlanceTpsConfig; status: ConfigLoadStatus; writable: boolean; diagnostic?: RegExp },
 	message: string,
 ): void {
 	assert.deepEqual(actual.config, expected.config, `${message}: config`);
@@ -25,10 +25,10 @@ function assertLoadResult(
 }
 
 test("config store diagnoses reads and atomically saves through an explicit path", async () => {
-	const agentDir = await mkdtemp(join(tmpdir(), "pi-glance-config-io-"));
+	const agentDir = await mkdtemp(join(tmpdir(), "pi-glance-tps-config-io-"));
 
 	try {
-		const configDir = join(agentDir, "pi-glance");
+		const configDir = join(agentDir, "pi-glance-tps");
 		const configPath = join(configDir, "config.json");
 		const { loadConfig, loadConfigSync, saveConfig } = createConfigStore(configPath);
 
@@ -125,7 +125,7 @@ test("config store diagnoses reads and atomically saves through an explicit path
 });
 
 test("new defaults do not overwrite saved choices from current or older configs", async () => {
-	const dir = await mkdtemp(join(tmpdir(), "pi-glance-config-defaults-"));
+	const dir = await mkdtemp(join(tmpdir(), "pi-glance-tps-config-defaults-"));
 	try {
 		const path = join(dir, "config.json");
 		const store = createConfigStore(path);
@@ -165,7 +165,7 @@ test("new defaults do not overwrite saved choices from current or older configs"
 });
 
 test("two config stores in one process remain independent", async () => {
-	const dir = await mkdtemp(join(tmpdir(), "pi-glance-config-stores-"));
+	const dir = await mkdtemp(join(tmpdir(), "pi-glance-tps-config-stores-"));
 	try {
 		const first = createConfigStore(join(dir, "first.json"));
 		const second = createConfigStore(join(dir, "second.json"));

@@ -1,9 +1,9 @@
-import type { ActivityAnimation, ActivityKind, GlanceConfig } from "../types.js";
+import type { ActivityAnimation, ActivityKind, GlanceTpsConfig } from "../types.js";
 
 export type ScheduleActivityFrame = (callback: () => void, delayMs: number) => () => void;
 export interface ActivityMotion { kind: "sweep" | "blink"; rate: number }
 
-export function activityMotion(config: GlanceConfig, kind: ActivityKind | undefined): ActivityMotion | undefined {
+export function activityMotion(config: GlanceTpsConfig, kind: ActivityKind | undefined): ActivityMotion | undefined {
 	if (!config.enabled || config.editor.activityMode !== "sweep" || !kind) return undefined;
 	if (kind === "retry") return { kind: "blink", rate: config.editor.retryBlinkHz };
 	return { kind: "sweep", rate: config.editor.workingSweepSpeed * (kind === "working" ? 1 : config.editor.summarySpeedMultiplier) };

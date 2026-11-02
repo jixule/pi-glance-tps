@@ -2,7 +2,7 @@ import { strict as assert } from "node:assert";
 import { test } from "node:test";
 import { stripTerminalSequences } from "@earendil-works/pi-tui";
 import { createGitHarness, createRuntimeHarness, createRuntimeTestContext, invokeEditorFactory } from "../support/runtime-harness.js";
-import type { GlanceEditor } from "../../src/surface/editor.js";
+import type { GlanceTpsEditor } from "../../src/surface/editor.js";
 
 const summary = (type: string, id: string, parentId: string | null, cost: number) => ({
 	type, id, parentId, usage: { input: 100, output: 10, cost: { total: cost } },
@@ -15,7 +15,7 @@ test("persisted boundary summaries settle once without compact events, including
 	await h.runtime.commands.openPane("", ctx.ctx);
 	const state = h.showPanePreviewStates[0]!;
 	let renderRequests = 0;
-	const editor = invokeEditorFactory(ctx, 0, () => { renderRequests++; }) as GlanceEditor;
+	const editor = invokeEditorFactory(ctx, 0, () => { renderRequests++; }) as GlanceTpsEditor;
 	const reads = ctx.getEntryReads();
 	const compact = summary("compaction", "boundary", null, 0.25);
 	ctx.setSessionEntries([compact]);
@@ -68,7 +68,7 @@ test("summary events deduplicate against startup, event-first persistence and tr
 	h.runtime.events.sessionStart({}, ctx.ctx);
 	assert.equal(h.showPaneOptions[0]!.getPreviewState!().usage.cost, 1.75, "retired preview remains unchanged");
 	await h.runtime.events.sessionCompact({ compactionEntry: { ...reconciled } }, ctx.ctx);
-	const editor = invokeEditorFactory(ctx, 1, () => {}) as GlanceEditor;
+	const editor = invokeEditorFactory(ctx, 1, () => {}) as GlanceTpsEditor;
 	assert.match(stripTerminalSequences(editor.render(240).join("\n")), /\$1\.75\b/, "reload must retain exact billed totals");
 	await h.runtime.events.sessionShutdown({}, ctx.ctx);
 });

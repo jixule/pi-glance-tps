@@ -3,9 +3,9 @@ import { test } from "node:test";
 import { CURSOR_MARKER, visibleWidth, type Component, type TUI } from "@earendil-works/pi-tui";
 import type { ExtensionUIContext, KeybindingsManager, Theme } from "@earendil-works/pi-coding-agent";
 import { defaultConfig } from "../../src/config/model.js";
-import { showGlancePane } from "../../src/settings/pane.js";
+import { showGlanceTpsPane } from "../../src/settings/pane.js";
 import { getThemeCatalogForSlot } from "../../src/settings/catalog.js";
-import { resolveBuiltInGlanceStyles } from "../../src/theme/adapter.js";
+import { resolveBuiltInGlanceTpsStyles } from "../../src/theme/adapter.js";
 import { renderInputSurface } from "../../src/surface/renderer.js";
 import { paneHarness, keys as k } from "../support/pane-harness.js";
 import { richInputSurfaceState, stripAnsi } from "../support/surface-test-harness.js";
@@ -19,7 +19,7 @@ test("settings preview keeps the real input width and status fitting when the te
 			const liveFrame = renderInputSurface(richInputSurfaceState(), h.config, width);
 			assert.equal(top, liveFrame[h.config.editor.topMarginRows], `preview must fit the same facts as the live frame at ${width} columns`);
 			assert.equal(visibleWidth(top!), width);
-			const heading = lines.find(line => line.includes("◌ Glance"))!;
+			const heading = lines.find(line => line.includes("◌ GlanceTps"))!;
 			assert.ok(visibleWidth(heading.trimStart()) <= 100, "only the settings controls remain width-bounded");
 		}
 	} finally { h.pane.dispose(); }
@@ -44,12 +44,12 @@ test("preview position stays stable across sections and field editors without fi
 	} finally { h.pane.dispose(); }
 });
 
-test("Glance off and discard confirmation keep the same preview area", () => {
+test("GlanceTps off and discard confirmation keep the same preview area", () => {
 	const h = paneHarness();
 	try {
 		const initial = h.pane.render(100);
 		h.press(k.space);
-		assert.match(h.text(), /Preview · Glance is off/);
+		assert.match(h.text(), /Preview · GlanceTps is off/);
 		assert.equal(h.pane.render(100).length, initial.length, "turning the frame off must not collapse its preview space");
 		h.press(k.esc);
 		assert.match(h.text(), /Discard unsaved changes/);
@@ -65,7 +65,7 @@ test("new users see four sections, readable values and save/close without focus 
 	for (const label of ["Appearance", "Status line", "Activity", "Light palette", "Dark palette", "Nerd Font", "Smart path", "Save & close", "No changes"]) assert.ok(text.includes(label), label);
 	assert.ok(!text.includes("General") && !text.includes("Enabled"));
 	h.press(k.space);
-	assert.match(h.text(), /Glance \*\s+Off/);
+	assert.match(h.text(), /GlanceTps \*\s+Off/);
 	assert.match(h.text(), /Unsaved changes/);
 	h.press(k.enter);
 	assert.match(h.text(), /No changes/);
@@ -179,11 +179,11 @@ test("dirty exit and reset show safe choices; Enter alone never discards edits",
 	assert.match(h.text(), /Discard unsaved changes\?/);
 	h.press(k.enter);
 	assert.equal(h.completion(), undefined);
-	assert.match(h.text(), /Glance \*\s+Off/);
+	assert.match(h.text(), /GlanceTps \*\s+Off/);
 	h.press("r");
 	assert.match(h.text(), /Reset all settings\?/);
 	h.press(k.esc);
-	assert.match(h.text(), /Glance \*\s+Off/);
+	assert.match(h.text(), /GlanceTps \*\s+Off/);
 	h.press(k.esc, k.down, k.enter);
 	assert.deepEqual(h.completion(), { action: "cancel" });
 	h.pane.dispose();
@@ -194,14 +194,14 @@ test("palette preview uses the edited slot, injected styles and the reported col
 		const h = paneHarness(defaultConfig(), { renderStyleContext: { trueColor } });
 		h.press(k.down, k.enter, k.down);
 		const raw = h.pane.render(100).join("\n");
-		const styles = resolveBuiltInGlanceStyles("catppuccin-latte", trueColor ? "truecolor" : "ansi256");
+		const styles = resolveBuiltInGlanceTpsStyles("catppuccin-latte", trueColor ? "truecolor" : "ansi256");
 		assert.ok(raw.includes(styles.border("╭")));
 		assert.equal(raw.includes("\x1b[38;2;"), trueColor);
 		h.press(k.esc);
 		assert.match(h.text(), /Light palette\s+Light/);
 		h.pane.dispose();
 	}
-	const dark = resolveBuiltInGlanceStyles("dark");
+	const dark = resolveBuiltInGlanceTpsStyles("dark");
 	const h = paneHarness(defaultConfig(), { renderStyleContext: { styles: dark } });
 	assert.ok(h.pane.render(100).join("").includes(dark.border("╭")));
 	h.pane.dispose();
@@ -210,7 +210,7 @@ test("palette preview uses the edited slot, injected styles and the reported col
 test("the full-width bottom overlay keeps the editor mounted and disposes its preview on every exit", async () => {
 	for (const mode of ["regular", "fullscreen"] as const) for (const fail of [false, true]) {
 		let active = 0;
-		const promise = showGlancePane(defaultConfig(), { ui: { custom: async <T>(factory: (tui: TUI, theme: Theme, keys: KeybindingsManager, done: (result: T) => void) => Component, options?: Parameters<ExtensionUIContext["custom"]>[1]) => {
+		const promise = showGlanceTpsPane(defaultConfig(), { ui: { custom: async <T>(factory: (tui: TUI, theme: Theme, keys: KeybindingsManager, done: (result: T) => void) => Component, options?: Parameters<ExtensionUIContext["custom"]>[1]) => {
 			const pane = factory({ mode, terminal: { rows: 32 }, requestRender() {} } as unknown as TUI, { fg: (_tone: string, text: string) => text } as unknown as Theme, undefined as unknown as KeybindingsManager, () => {});
 			assert.equal(options?.overlay, true, "settings must not replace Pi's editor with a taller component");
 			const layout = typeof options?.overlayOptions === "function" ? options.overlayOptions() : options?.overlayOptions;

@@ -22,7 +22,7 @@ test("color validation accepts all presets and falls back to the original theme 
 });
 
 for (const version of [12, 13]) test(`v${version} display upgrade preserves preferences and remains in memory until Save`, async () => {
-	const dir = await mkdtemp(join(tmpdir(), "glance-display-config-"));
+	const dir = await mkdtemp(join(tmpdir(), "glance-tps-display-config-"));
 	try {
 		for (const changes of ["hidden", "marker", "summary"] as const) {
 			const config = defaultConfig();

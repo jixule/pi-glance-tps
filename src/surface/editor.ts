@@ -5,12 +5,12 @@ import { matchesStashShortcut, shortcutConflict } from "../input/keybinding.js";
 import type { PromptStash } from "../input/stash.js";
 import { stripControls } from "./format.js";
 import { measureInputSurfaceFrame, renderInputSurfaceFrame } from "./frame.js";
-import { GlanceLineRenderer } from "./status-line.js";
+import { GlanceTpsLineRenderer } from "./status-line.js";
 import { formatSurfaceScrollIndicator } from "./layout.js";
-import { resolveGlanceRenderStyles, type GlanceRenderStyleContext, type ResolvedGlanceStyles } from "../theme/adapter.js";
-import type { ExtensionStatusSource, GlanceConfig, GlanceState } from "../types.js";
+import { resolveGlanceTpsRenderStyles, type GlanceTpsRenderStyleContext, type ResolvedGlanceTpsStyles } from "../theme/adapter.js";
+import type { ExtensionStatusSource, GlanceTpsConfig, GlanceTpsState } from "../types.js";
 
-export interface GlanceEditorOptions {
+export interface GlanceTpsEditorOptions {
 	readonly animationNowMs?: () => number;
 	readonly scheduleAnimationFrame?: ScheduleActivityFrame;
 	readonly ownsEditor?: () => boolean;
@@ -19,7 +19,7 @@ export interface GlanceEditorOptions {
 	readonly stash?: PromptStash;
 	readonly onStashError?: (message: string) => void;
 	readonly editorOptions?: EditorOptions;
-	readonly renderStyleContext?: GlanceRenderStyleContext;
+	readonly renderStyleContext?: GlanceTpsRenderStyleContext;
 }
 
 function stripBorderColor(line: string, borderColor: (text: string) => string): string {
@@ -59,28 +59,28 @@ function indentAutocompleteLine(line: string, width: number, indentWidth: number
 	return normalizeRenderedLine(`${indent}${line}`, width);
 }
 
-export class GlanceEditor extends CustomEditor {
+export class GlanceTpsEditor extends CustomEditor {
 	private readonly activityClock: ActivityClock;
 	private disposed = false;
 	private activityIndicator: Parameters<CustomEditor["setWorkingStatusIndicator"]>[0];
-	private readonly statusLine = new GlanceLineRenderer();
+	private readonly statusLine = new GlanceTpsLineRenderer();
 	private pasting = false;
 
 	constructor(
 		tui: TUI,
 		theme: EditorTheme,
 		private readonly appKeybindings: KeybindingsManager,
-		private readonly getState: () => GlanceState,
-		private readonly getConfig: () => GlanceConfig,
-		private readonly glanceOptions?: GlanceEditorOptions,
+		private readonly getState: () => GlanceTpsState,
+		private readonly getConfig: () => GlanceTpsConfig,
+		private readonly glanceTpsOptions?: GlanceTpsEditorOptions,
 	) {
-		super(tui, theme, appKeybindings, { ...glanceOptions?.editorOptions, embedWorkingStatus: true });
+		super(tui, theme, appKeybindings, { ...glanceTpsOptions?.editorOptions, embedWorkingStatus: true });
 		this.activityClock = new ActivityClock({
 			getMotion: () => activityMotion(this.getConfig(), this.activityIndicator?.kind),
-			isPaused: () => !this.focused || this.glanceOptions?.ownsEditor?.() === false || this.glanceOptions?.isActivityPaused?.() === true,
+			isPaused: () => !this.focused || this.glanceTpsOptions?.ownsEditor?.() === false || this.glanceTpsOptions?.isActivityPaused?.() === true,
 			requestRender: () => tui.requestRender(),
-			nowMs: glanceOptions?.animationNowMs,
-			schedule: glanceOptions?.scheduleAnimationFrame,
+			nowMs: glanceTpsOptions?.animationNowMs,
+			schedule: glanceTpsOptions?.scheduleAnimationFrame,
 		});
 	}
 
@@ -88,7 +88,7 @@ export class GlanceEditor extends CustomEditor {
 	dispose(): void { this.disposed = true; this.activityClock.dispose(); this.activityIndicator = undefined; }
 
 	override setWorkingStatusIndicator(indicator: Parameters<CustomEditor["setWorkingStatusIndicator"]>[0]): void {
-		// Pi owns the indicator and its clock. Glance renders it only in its own frame.
+		// Pi owns the indicator and its clock. GlanceTps renders it only in its own frame.
 		if (!this.disposed) this.activityIndicator = indicator;
 	}
 
@@ -104,20 +104,20 @@ export class GlanceEditor extends CustomEditor {
 			return;
 		}
 		const config = this.getConfig();
-		if (this.focused && config.enabled && config.editor.stashEnabled && this.glanceOptions?.stash && matchesStashShortcut(data, config.editor.stashShortcut)) {
+		if (this.focused && config.enabled && config.editor.stashEnabled && this.glanceTpsOptions?.stash && matchesStashShortcut(data, config.editor.stashShortcut)) {
 			if (isKeyRepeat(data)) return;
 			const conflict = shortcutConflict(data, config.editor.stashShortcut, this.appKeybindings);
 			if (conflict) {
-				this.glanceOptions.onStashError?.(`Stash shortcut is used by ${conflict}. Change it in /glance → Input.`);
+				this.glanceTpsOptions.onStashError?.(`Stash shortcut is used by ${conflict}. Change it in /glance-tps → Input.`);
 			} else {
 				// Existing extension shortcuts retain precedence over this editor feature.
 				if (this.onExtensionShortcut?.(data)) return;
 				const current = this.getExpandedText();
 				let restored: string;
 				try {
-					restored = this.glanceOptions.stash.exchange(current);
+					restored = this.glanceTpsOptions.stash.exchange(current);
 				} catch {
-					this.glanceOptions.onStashError?.("Could not save the draft. Input was kept.");
+					this.glanceTpsOptions.onStashError?.("Could not save the draft. Input was kept.");
 					return;
 				}
 				if (current !== restored) this.setText(restored);
@@ -128,11 +128,11 @@ export class GlanceEditor extends CustomEditor {
 		super.handleInput(data);
 	}
 
-	private currentStyles(config: GlanceConfig = this.getConfig()): ResolvedGlanceStyles {
-		const styles = resolveGlanceRenderStyles(config.theme, this.glanceOptions?.renderStyleContext, config.editor.workingSweepColor);
+	private currentStyles(config: GlanceTpsConfig = this.getConfig()): ResolvedGlanceTpsStyles {
+		const styles = resolveGlanceTpsRenderStyles(config.theme, this.glanceTpsOptions?.renderStyleContext, config.editor.workingSweepColor);
 		// Pi owns Bash detection/execution and updates this public callback on input
 		// and theme changes. Preserve its cue only on the live Bash frame; title and
-		// status remain Glance-owned, so their cache key must not change.
+		// status remain GlanceTps-owned, so their cache key must not change.
 		return this.getText().trimStart().startsWith("!") ? { ...styles, border: this.borderColor } : styles;
 	}
 
@@ -181,10 +181,10 @@ export class GlanceEditor extends CustomEditor {
 				focus: isFocused ? "focused" : "unfocused",
 				topScrollIndicator: this.extractScrollIndicator(topOriginal, metrics.safeWidth),
 				bottomScrollIndicator: this.extractScrollIndicator(bottomOriginal, metrics.safeWidth),
-				hasDraft: this.glanceOptions?.stash?.hasDraft,
+				hasDraft: this.glanceTpsOptions?.stash?.hasDraft,
 			},
 			status: {
-				render: (budget, frameStyles) => this.statusLine.render(state, config, budget, state.providers.availableCount, { styles: frameStyles, extensionStatuses: this.glanceOptions?.getExtensionStatuses?.() }),
+				render: (budget, frameStyles) => this.statusLine.render(state, config, budget, state.providers.availableCount, { styles: frameStyles, extensionStatuses: this.glanceTpsOptions?.getExtensionStatuses?.() }),
 			},
 		});
 

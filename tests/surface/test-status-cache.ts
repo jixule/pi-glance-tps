@@ -1,9 +1,9 @@
 import { strict as assert } from "node:assert";
 import { test } from "node:test";
 import { cloneConfig, defaultConfig } from "../../src/config/model.js";
-import { GlanceLineRenderer, renderGlanceLine } from "../../src/surface/status-line.js";
+import { GlanceTpsLineRenderer, renderGlanceTpsLine } from "../../src/surface/status-line.js";
 import { createInputSurfaceRenderer, renderInputSurface } from "../../src/surface/renderer.js";
-import { resolveBuiltInGlanceStyles } from "../../src/theme/adapter.js";
+import { resolveBuiltInGlanceTpsStyles } from "../../src/theme/adapter.js";
 import { ExtensionStatusCache } from "../../src/surface/extension-statuses.js";
 import { richInputSurfaceState } from "../support/surface-test-harness.js";
 
@@ -33,9 +33,9 @@ test("status cache skips collection until a render input changes", () => {
 	let state = { ...sample, get usage() { reads++; return sample.usage; } };
 	let config = defaultConfig();
 	let width = 160;
-	let styles = resolveBuiltInGlanceStyles("light");
+	let styles = resolveBuiltInGlanceTpsStyles("light");
 	let widthMode: "full" | "minimal" = "full";
-	const renderer = new GlanceLineRenderer();
+	const renderer = new GlanceTpsLineRenderer();
 	const render = () => renderer.render(state, config, width, state.providers.availableCount, { styles, widthMode });
 	const check = () => {
 		const before = reads;
@@ -44,15 +44,15 @@ test("status cache skips collection until a render input changes", () => {
 		const cached = reads;
 		for (let i = 0; i < 30; i++) assert.equal(render(), actual);
 		assert.equal(reads, cached, "unchanged frames do not recollect facts");
-		assert.equal(actual, renderGlanceLine(state, config, width, state.providers.availableCount, { styles, widthMode }));
+		assert.equal(actual, renderGlanceTpsLine(state, config, width, state.providers.availableCount, { styles, widthMode }));
 	};
 	check();
 	state.version++; check();
 	state = { ...state, get usage() { reads++; return sample.usage; } }; check();
 	config = cloneConfig(config); config.icons = "plain"; check();
 	width = 80; check();
-	styles = resolveBuiltInGlanceStyles("dark"); check();
-	styles = resolveBuiltInGlanceStyles("dark", "ansi256"); check();
+	styles = resolveBuiltInGlanceTpsStyles("dark"); check();
+	styles = resolveBuiltInGlanceTpsStyles("dark", "ansi256"); check();
 	state.providers.availableCount++; check();
 	widthMode = "minimal"; check();
 });

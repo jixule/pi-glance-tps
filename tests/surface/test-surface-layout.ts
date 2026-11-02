@@ -22,7 +22,7 @@ import type { WorkspaceLabelMode } from "../../src/types.js";
 
 const ANSI_PATTERN = /\x1b\[[0-?]*[ -/]*[@-~]/g;
 const WIDTHS = [0, 1, 2, 3, 4, 12, 15, 16, 20, 56, 64, 72, 96, 120, 160];
-const homePath = `${homedir()}/winnie/00_project/07_pi-glance`;
+const homePath = `${homedir()}/winnie/00_project/07_pi-glance-tps`;
 
 function stripAnsi(text: string): string {
 	return text.replace(ANSI_PATTERN, "");
@@ -46,7 +46,7 @@ function titlePlan(width: number, mode: WorkspaceLabelMode = "name", showTitle =
 	const metrics = surfaceMetrics(width);
 	return planWorkspaceTitle({
 		workspacePath: homePath,
-		workspaceName: "07_pi-glance",
+		workspaceName: "07_pi-glance-tps",
 		mode,
 		innerWidth: metrics.innerWidth,
 		surfaceWidth: metrics.safeWidth,
@@ -129,7 +129,7 @@ const hiddenTitle = titlePlan(120, "name", false);
 assert.equal(hiddenTitle.kind, "hidden", "showTitle false records a hidden title plan");
 assert.equal(plain(hiddenTitle.chunks), "─", "showTitle false leaves only the border lead-in");
 const hiddenTop = planSurfaceTopFrame({ width: 120, left: hiddenTitle, status: "ctx 23%" });
-assert.ok(!plain(hiddenTop.chunks).includes("07_pi-glance"), "showTitle false excludes workspace label from top frame");
+assert.ok(!plain(hiddenTop.chunks).includes("07_pi-glance-tps"), "showTitle false excludes workspace label from top frame");
 
 const statusEmpty = planSurfaceTopFrame({ width: 64, left: titlePlan(64), status: "" });
 assert.equal(statusEmpty.status.text, "", "empty status remains empty");
@@ -141,25 +141,25 @@ assert.equal(statusNonEmpty.status.text, "ctx 23%", "non-empty status is kept wh
 assert.ok(plain(statusNonEmpty.chunks).includes(" ctx 23% ─╮"), "non-empty status gets gap and right cap");
 
 const nameLabel = titlePlan(160, "name");
-assert.equal(nameLabel.label, "07_pi-glance", "name workspace label uses the workspace name");
-assert.ok(plain(nameLabel.chunks).includes(" 07_pi-glance "), "name workspace title is padded");
+assert.equal(nameLabel.label, "07_pi-glance-tps", "name workspace label uses the workspace name");
+assert.ok(plain(nameLabel.chunks).includes(" 07_pi-glance-tps "), "name workspace title is padded");
 
 const smartNarrow = titlePlan(72, "smart");
-assert.equal(smartNarrow.label, "07_pi-glance", "smart workspace label uses name at narrow surface widths");
+assert.equal(smartNarrow.label, "07_pi-glance-tps", "smart workspace label uses name at narrow surface widths");
 const smartMedium = titlePlan(120, "smart");
-assert.equal(smartMedium.label, "…/00_project/07_pi-glance", "smart workspace label uses parent path at medium widths");
+assert.equal(smartMedium.label, "…/00_project/07_pi-glance-tps", "smart workspace label uses parent path at medium widths");
 const pathWide = titlePlan(160, "path");
-assert.equal(pathWide.label, "~/winnie/00_project/07_pi-glance", "path workspace label uses safe home-shortened path");
+assert.equal(pathWide.label, "~/winnie/00_project/07_pi-glance-tps", "path workspace label uses safe home-shortened path");
 
-const longPath = "/mnt/data/workspaces/clients/acme/super/long/project/pi-glance";
+const longPath = "/mnt/data/workspaces/clients/acme/super/long/project/pi-glance-tps";
 const pathSmall = planWorkspaceTitle({
 	workspacePath: longPath,
-	workspaceName: "pi-glance",
+	workspaceName: "pi-glance-tps",
 	mode: "path",
 	innerWidth: 54,
 	surfaceWidth: 56,
 });
-assert.ok(pathSmall.label.includes("pi-glance"), "long path labels keep the project name when truncated");
+assert.ok(pathSmall.label.includes("pi-glance-tps"), "long path labels keep the project name when truncated");
 assert.ok(!pathSmall.label.startsWith("/"), "long path labels avoid absolute path disclosure");
 assert.ok(visibleWidth(pathSmall.title) <= pathSmall.budget, "long path title fits its budget");
 

@@ -4,20 +4,20 @@ import { ICONS } from "../theme/palette.js";
 import { SEGMENT_BY_ID } from "../segments/registry.js";
 import { renderSegment } from "../segments/render.js";
 import {
-	resolveGlanceRenderStyles,
-	type GlanceRenderStyleContext,
-	type ResolvedGlanceStyles,
+	resolveGlanceTpsRenderStyles,
+	type GlanceTpsRenderStyleContext,
+	type ResolvedGlanceTpsStyles,
 } from "../theme/adapter.js";
-import type { GlanceConfig, GlanceState, SegmentRenderContext, SegmentRenderResult, WidthMode } from "../types.js";
+import type { GlanceTpsConfig, GlanceTpsState, SegmentRenderContext, SegmentRenderResult, WidthMode } from "../types.js";
 
 const RESET = "\x1b[0m";
 
-interface GlanceLineRenderOptions extends GlanceRenderStyleContext {
+interface GlanceTpsLineRenderOptions extends GlanceTpsRenderStyleContext {
 	readonly widthMode?: WidthMode;
 	readonly extensionStatuses?: ReadonlyMap<string, string>;
 }
 
-function applyInlineSegmentStyle(segment: SegmentRenderResult, styles: ResolvedGlanceStyles, text: string): string {
+function applyInlineSegmentStyle(segment: SegmentRenderResult, styles: ResolvedGlanceTpsStyles, text: string): string {
 	if (segment.id === "extensions") return text;
 	if (segment.tone === "error") return styles.error(text);
 	if (segment.tone === "warning") return styles.warn(text);
@@ -30,21 +30,21 @@ function widthModeFor(width: number): WidthMode {
 	return "full";
 }
 
-function resolveShowProvider(config: GlanceConfig, providerCount: number, widthMode: WidthMode): boolean {
+function resolveShowProvider(config: GlanceTpsConfig, providerCount: number, widthMode: WidthMode): boolean {
 	if (config.display.showProvider === "always") return true;
 	if (config.display.showProvider === "never") return false;
 	return providerCount > 1 && widthMode === "full";
 }
 
 function renderEnabledSegments(
-	state: GlanceState,
-	config: GlanceConfig,
+	state: GlanceTpsState,
+	config: GlanceTpsConfig,
 	width: number,
 	providerCount = 1,
-	options: GlanceLineRenderOptions = {},
-): { styles: ResolvedGlanceStyles; segments: SegmentRenderResult[] } {
+	options: GlanceTpsLineRenderOptions = {},
+): { styles: ResolvedGlanceTpsStyles; segments: SegmentRenderResult[] } {
 	const widthMode = options.widthMode ?? widthModeFor(width);
-	const styles = resolveGlanceRenderStyles(config.theme, options);
+	const styles = resolveGlanceTpsRenderStyles(config.theme, options);
 	const icons = ICONS[config.icons];
 	const ctx: SegmentRenderContext = {
 		state,
@@ -69,7 +69,7 @@ interface JoinedSegments {
 	width: number;
 }
 
-function joinSegments(styles: ResolvedGlanceStyles, segments: SegmentRenderResult[]): JoinedSegments {
+function joinSegments(styles: ResolvedGlanceTpsStyles, segments: SegmentRenderResult[]): JoinedSegments {
 	if (segments.length === 0) return { text: "", width: 0 };
 	const text = `${segments
 		.map((segment) => applyInlineSegmentStyle(segment, styles, segment.text))
@@ -77,7 +77,7 @@ function joinSegments(styles: ResolvedGlanceStyles, segments: SegmentRenderResul
 	return { text, width: visibleWidth(text) };
 }
 
-function fitSegments(styles: ResolvedGlanceStyles, segments: SegmentRenderResult[], width: number): SegmentRenderResult[] {
+function fitSegments(styles: ResolvedGlanceTpsStyles, segments: SegmentRenderResult[], width: number): SegmentRenderResult[] {
 	const fitted = [...segments];
 	let joined = joinSegments(styles, fitted);
 	// New optional detail must not crowd out facts that fit before it was added.
@@ -108,17 +108,17 @@ function fitSegments(styles: ResolvedGlanceStyles, segments: SegmentRenderResult
 	return fitted;
 }
 
-function enabledExtensionStatuses(config: GlanceConfig, options: GlanceLineRenderOptions): ReadonlyMap<string, string> | undefined {
+function enabledExtensionStatuses(config: GlanceTpsConfig, options: GlanceTpsLineRenderOptions): ReadonlyMap<string, string> | undefined {
 	return config.enabled && config.segments.some(s => s.id === "extensions" && s.enabled)
 		? options.extensionStatuses : undefined;
 }
 
 function renderLine(
-	state: GlanceState,
-	config: GlanceConfig,
+	state: GlanceTpsState,
+	config: GlanceTpsConfig,
 	width: number,
 	providerCount: number,
-	options: GlanceLineRenderOptions,
+	options: GlanceTpsLineRenderOptions,
 	extensionTexts: readonly string[],
 ): string {
 	if (!config.enabled) return "";
@@ -144,23 +144,23 @@ function renderLine(
 	return line.text;
 }
 
-export function renderGlanceLine(
-	state: GlanceState,
-	config: GlanceConfig,
+export function renderGlanceTpsLine(
+	state: GlanceTpsState,
+	config: GlanceTpsConfig,
 	width: number,
 	providerCount = state.providers.availableCount,
-	options: GlanceLineRenderOptions = {},
+	options: GlanceTpsLineRenderOptions = {},
 ): string {
 	return renderLine(state, config, width, providerCount, options, extensionStatusTexts(enabledExtensionStatuses(config, options)));
 }
 
 /** One entry per surface; compare live status contents rather than the Map's identity. */
-export class GlanceLineRenderer {
+export class GlanceTpsLineRenderer {
 	private readonly extensionStatuses = new ExtensionStatusCache();
 	private cached?: {
-		state: GlanceState;
+		state: GlanceTpsState;
 		version: number;
-		config: GlanceConfig;
+		config: GlanceTpsConfig;
 		width: number;
 		providerCount: number;
 		styleKey: string;
@@ -170,13 +170,13 @@ export class GlanceLineRenderer {
 	};
 
 	render(
-		state: GlanceState,
-		config: GlanceConfig,
+		state: GlanceTpsState,
+		config: GlanceTpsConfig,
 		width: number,
 		providerCount = state.providers.availableCount,
-		options: GlanceLineRenderOptions = {},
+		options: GlanceTpsLineRenderOptions = {},
 	): string {
-		const styles = resolveGlanceRenderStyles(config.theme, options);
+		const styles = resolveGlanceTpsRenderStyles(config.theme, options);
 		const extensionEntries = this.extensionStatuses.read(enabledExtensionStatuses(config, options));
 		const previous = this.cached;
 		if (

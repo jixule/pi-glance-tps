@@ -2,8 +2,8 @@ import { strict as assert } from "node:assert";
 import { test } from "node:test";
 import { stripTerminalSequences, visibleWidth } from "@earendil-works/pi-tui";
 import { defaultConfig } from "../../src/config/model.js";
-import { GlanceLineRenderer, renderGlanceLine } from "../../src/surface/status-line.js";
-import { resolveBuiltInGlanceStyles } from "../../src/theme/adapter.js";
+import { GlanceTpsLineRenderer, renderGlanceTpsLine } from "../../src/surface/status-line.js";
+import { resolveBuiltInGlanceTpsStyles } from "../../src/theme/adapter.js";
 import { testState } from "../support/helpers.js";
 
 test("standard extension statuses are value-only facts between Tokens and Model", () => {
@@ -11,7 +11,7 @@ test("standard extension statuses are value-only facts between Tokens and Model"
 	config.segments = config.segments.filter(s => ["tokens", "extensions", "model"].includes(s.id));
 	const state = testState({ model: { id: "test-model", displayName: "test-model", thinking: "off" }, usage: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, cost: 0 } });
 	const options = { widthMode: "full" as const, extensionStatuses: new Map([["z", "PLAN"], ["a", "MCP: 3/3"]]) };
-	const text = stripTerminalSequences(renderGlanceLine(state, config, 180, 1, options));
+	const text = stripTerminalSequences(renderGlanceTpsLine(state, config, 180, 1, options));
 	assert.equal(text, "tok ↑0 ↓0 · MCP: 3/3 · PLAN · ai test-model");
 });
 
@@ -20,19 +20,19 @@ test("external status length cannot shorten or evict the built-in facts that fit
 	const state = testState();
 	const extensionStatuses = new Map([["a", "MCP: " + "long status ".repeat(40)], ["b", "PLAN"]]);
 	for (const width of [0, 1, 4, 8, 12, 20, 40, 64, 80, 120, 180, 240]) {
-		const baseline = stripTerminalSequences(renderGlanceLine(state, config, width));
-		const raw = renderGlanceLine(state, config, width, 1, { extensionStatuses });
+		const baseline = stripTerminalSequences(renderGlanceTpsLine(state, config, width));
+		const raw = renderGlanceTpsLine(state, config, width, 1, { extensionStatuses });
 		const line = stripTerminalSequences(raw);
 		for (const fact of baseline.split(" · ").filter(Boolean)) assert.ok(line.includes(fact), `${width}: lost ${fact}: ${line}`);
 		assert.ok(visibleWidth(raw) <= width);
 	}
-	const line = stripTerminalSequences(renderGlanceLine(state, config, 240, 1, { extensionStatuses }));
+	const line = stripTerminalSequences(renderGlanceTpsLine(state, config, 240, 1, { extensionStatuses }));
 	assert.ok(line.includes("MCP:") && line.includes("…"), line);
 });
 
 test("the cached line observes in-place status text, ANSI, deletion and visibility changes", () => {
 	let config = defaultConfig();
-	const state = testState(), renderer = new GlanceLineRenderer();
+	const state = testState(), renderer = new GlanceTpsLineRenderer();
 	const extensionStatuses = new Map([["worker", "Ready"]]);
 	const render = () => renderer.render(state, config, 240, 1, { extensionStatuses });
 	assert.ok(render().includes("Ready"));
@@ -55,12 +55,12 @@ test("the cached line observes in-place status text, ANSI, deletion and visibili
 
 test("cached external ordering matches uncached rendering for equivalent Unicode keys", () => {
 	const config = defaultConfig(); config.segments = [{ id: "extensions", enabled: true }];
-	const state = testState(), renderer = new GlanceLineRenderer();
+	const state = testState(), renderer = new GlanceTpsLineRenderer();
 	let statuses = new Map([["é", "FIRST"], ["e\u0301", "SECOND"]]);
 	const render = () => renderer.render(state, config, 80, 1, { extensionStatuses: statuses });
 	render();
 	statuses = new Map([...statuses].reverse());
-	assert.equal(render(), renderGlanceLine(state, config, 80, 1, { extensionStatuses: statuses }), "stable collation ties retain the publisher's current order");
+	assert.equal(render(), renderGlanceTpsLine(state, config, 80, 1, { extensionStatuses: statuses }), "stable collation ties retain the publisher's current order");
 });
 
 test("single-line normalization ignores empty statuses and preserves Unicode, ANSI and style boundaries", () => {
@@ -72,8 +72,8 @@ test("single-line normalization ignores empty statuses and preserves Unicode, AN
 		["b", "\x1b]8;;https://example.invalid\x1b\\\x1b[1mPLAN"],
 	]);
 	const before = [...statuses], state = testState();
-	const styles = resolveBuiltInGlanceStyles("dark");
-	const render = (width: number) => renderGlanceLine(state, config, width, 1, { extensionStatuses: statuses, styles });
+	const styles = resolveBuiltInGlanceTpsStyles("dark");
+	const render = (width: number) => renderGlanceTpsLine(state, config, width, 1, { extensionStatuses: statuses, styles });
 	const full = render(240), plain = stripTerminalSequences(full);
 	assert.equal(plain, "中文 👩🏽‍💻 é ready · PLAN · ai GPT 5.5");
 	assert.ok(full.includes("\x1b[31m"));
@@ -97,7 +97,7 @@ test("single-line normalization ignores empty statuses and preserves Unicode, AN
 test("empty groups leave no separator and explicit ordering/visibility works without Model or Tokens", () => {
 	const config = defaultConfig(); config.icons = "plain";
 	const state = testState(), statuses = new Map([["z", "last"], ["a", "first"]]);
-	const render = () => stripTerminalSequences(renderGlanceLine(state, config, 180, 1, { extensionStatuses: statuses }));
+	const render = () => stripTerminalSequences(renderGlanceTpsLine(state, config, 180, 1, { extensionStatuses: statuses }));
 	config.segments = [{ id: "model", enabled: true }, { id: "extensions", enabled: true }];
 	assert.equal(render(), "ai GPT 5.5 · first · last");
 	config.segments[0]!.enabled = false;
@@ -112,10 +112,10 @@ test("overflow prefers whole leading statuses with an omission mark and caps ext
 	const config = defaultConfig(); config.icons = "plain";
 	config.segments = [{ id: "extensions", enabled: true }, { id: "model", enabled: true }];
 	const options = { extensionStatuses: new Map([["a", "PLAN"], ["b", "MCP ready"], ["c", "x".repeat(500)]]) };
-	const line = stripTerminalSequences(renderGlanceLine(testState(), config, 90, 1, options));
+	const line = stripTerminalSequences(renderGlanceTpsLine(testState(), config, 90, 1, options));
 	assert.equal(line, "PLAN · MCP ready · … · ai GPT 5.5");
 	config.segments = [{ id: "extensions", enabled: true }];
-	const edge = stripTerminalSequences(renderGlanceLine(testState(), config, 4, 1, {
+	const edge = stripTerminalSequences(renderGlanceTpsLine(testState(), config, 4, 1, {
 		extensionStatuses: new Map([["a", "PLAN"], ["b", "more"]]),
 	}));
 	assert.ok(edge.endsWith("…"), "hidden entries must be indicated even when the first entry exactly fits");
@@ -124,7 +124,7 @@ test("overflow prefers whole leading statuses with an omission mark and caps ext
 test("publisher terminal commands cannot erase the frame or move its cursor; text styling remains", () => {
 	const config = defaultConfig(); config.segments = [{ id: "extensions", enabled: true }];
 	const text = "\x1b[2J\x1b[H\x1b[31mready\x1b[0m\x07\x08\x1b]52;c;YQ==\x07";
-	const raw = renderGlanceLine(testState(), config, 80, 1, { extensionStatuses: new Map([["x", text]]) });
+	const raw = renderGlanceTpsLine(testState(), config, 80, 1, { extensionStatuses: new Map([["x", text]]) });
 	assert.equal(stripTerminalSequences(raw), "ready");
 	assert.ok(raw.includes("\x1b[31m"));
 	for (const control of ["\x1b[2J", "\x1b[H", "\x1b]52;", "\x07", "\x08"]) assert.equal(raw.includes(control), false);

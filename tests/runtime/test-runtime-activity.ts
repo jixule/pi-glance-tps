@@ -3,14 +3,14 @@ import { test } from "node:test";
 import { defaultConfig } from "../../src/config/model.js";
 import { stripTerminalSequences } from "@earendil-works/pi-tui";
 import { animationTime, nativeActivity } from "../support/activity-harness.js";
-import type { GlanceEditor } from "../../src/surface/editor.js";
+import type { GlanceTpsEditor } from "../../src/surface/editor.js";
 import { createGitHarness, createRuntimeHarness, createRuntimeTestContext, invokeEditorFactory } from "../support/runtime-harness.js";
 
-test("Text mode embeds Pi status without hiding the native source or starting a Glance animation clock", async () => {
+test("Text mode embeds Pi status without hiding the native source or starting a GlanceTps animation clock", async () => {
 	const ctx = createRuntimeTestContext({ idle: false });
 	const h = createRuntimeHarness({ git: createGitHarness(), scheduleSweepFrame: () => { throw new Error("Text started an animation"); } });
 	h.runtime.events.sessionStart({}, ctx.ctx);
-	const editor = invokeEditorFactory(ctx, 0, () => {}) as GlanceEditor;
+	const editor = invokeEditorFactory(ctx, 0, () => {}) as GlanceTpsEditor;
 	editor.focused = true;
 	h.runtime.events.agentStart({}, ctx.ctx);
 	editor.render(180);
@@ -26,7 +26,7 @@ test("Sweep follows native phases: working, fractional-speed summaries, retry bl
 	const h = createRuntimeHarness({ loadConfigSyncConfig: config, git: createGitHarness(), workingSweepNowMs: time.now,
 		scheduleSweepFrame: time.schedule, showPaneResults: [{ action: "save", config: text }] });
 	h.runtime.events.sessionStart({}, ctx.ctx);
-	const editor = invokeEditorFactory(ctx, 0, () => {}) as GlanceEditor;
+	const editor = invokeEditorFactory(ctx, 0, () => {}) as GlanceTpsEditor;
 	editor.focused = true; editor.setText("unchanged 中文🙂");
 	const idle = editor.render(180);
 	assert.equal(time.pending(), 0, "agent busy alone cannot invent a native activity");
@@ -49,7 +49,7 @@ test("Sweep follows native phases: working, fractional-speed summaries, retry bl
 	time.advance(1000); assert.deepEqual(editor.render(180), bright);
 	const stale = time.stale();
 	await h.runtime.commands.openPane("", ctx.ctx);
-	assert.equal(time.pending(), 0, "saving Text must immediately stop all Glance effects");
+	assert.equal(time.pending(), 0, "saving Text must immediately stop all GlanceTps effects");
 	stale(); assert.equal(time.pending(), 0);
 	assert.ok(stripTerminalSequences(editor.render(180).at(-1)!).includes("DEMO retry"));
 	editor.setWorkingStatusIndicator(undefined);
@@ -68,7 +68,7 @@ for (const outcome of ["save", "cancel", "failed", "readonly"] as const) test(`a
 		showPaneResults: [outcome === "cancel" ? { action: "cancel" } : { action: "save", config: next }],
 	});
 	h.runtime.events.sessionStart({}, ctx.ctx);
-	const editor = invokeEditorFactory(ctx, 0, () => {}) as GlanceEditor;
+	const editor = invokeEditorFactory(ctx, 0, () => {}) as GlanceTpsEditor;
 	editor.focused = true; editor.setText("draft 中🙂");
 	editor.setWorkingStatusIndicator(nativeActivity("branchSummary")); editor.render(180);
 	time.advance(500); const before = editor.render(180), installs = [...ctx.surfaceCalls], cursor = editor.getCursor();
@@ -85,7 +85,7 @@ test("blocking prompts and editor ownership suspend effects without losing nativ
 	const ctx = createRuntimeTestContext();
 	const h = createRuntimeHarness({ loadConfigSyncConfig: config, git: createGitHarness(), workingSweepNowMs: time.now, scheduleSweepFrame: time.schedule });
 	h.runtime.events.sessionStart({}, ctx.ctx);
-	const editor = invokeEditorFactory(ctx, 0, () => {}) as GlanceEditor; editor.focused = true;
+	const editor = invokeEditorFactory(ctx, 0, () => {}) as GlanceTpsEditor; editor.focused = true;
 	editor.setWorkingStatusIndicator(nativeActivity("compaction")); editor.render(180); time.advance(600);
 	const before = editor.render(180);
 	h.runtime.events.uiPromptStart({}, ctx.ctx); assert.equal(time.pending(), 0);

@@ -43,7 +43,7 @@ test("background fetch backs off after failure, never overlaps, and cancellation
 });
 
 test("fetch updates upstream counts from a local bare remote without changing HEAD, files or FETCH_HEAD", async () => {
-	const dir = mkdtempSync(join(tmpdir(), "glance-remote-integration-"));
+	const dir = mkdtempSync(join(tmpdir(), "glance-tps-remote-integration-"));
 	const git = (cwd: string, ...args: string[]) => execFileSync("git", ["-C", cwd, "-c", "core.hooksPath=/dev/null", ...args], { encoding: "utf8", stdio: "pipe" }).trim();
 	try {
 		const publisher = join(dir, "publisher"), remote = join(dir, "remote.git"), local = join(dir, "local");
@@ -75,7 +75,7 @@ test("fetch updates upstream counts from a local bare remote without changing HE
 });
 
 test("network Git has no controlling terminal, prompt helpers are noninteractive, and timeout kills its group", { skip: process.platform === "win32" }, async () => {
-	const dir = mkdtempSync(join(tmpdir(), "glance-git-isolation-"));
+	const dir = mkdtempSync(join(tmpdir(), "glance-tps-git-isolation-"));
 	const previousPath = process.env.PATH;
 	try {
 		const fake = join(dir, "git");

@@ -3,11 +3,11 @@ import { cloneConfig } from "../config/model.js";
 import { RETRY_BLINK, SUMMARY_SPEED, WORKING_SPEED, type NumericSettingSpec } from "../config/schema.js";
 import { choiceSetting, toggleSetting, type SettingDescriptor, type SettingOption } from "../config/settings.js";
 import { getSegmentSettings, segmentLabel } from "../segments/registry.js";
-import { GLANCE_THEMES } from "../theme/themes.js";
-import type { GlanceThemeSlot } from "../theme/selection.js";
-import type { GlanceConfig, GlanceThemeName, SegmentId } from "../types.js";
+import { TACH_THEMES } from "../theme/themes.js";
+import type { GlanceTpsThemeSlot } from "../theme/selection.js";
+import type { GlanceTpsConfig, GlanceTpsThemeName, SegmentId } from "../types.js";
 
-export type { GlanceThemeSlot } from "../theme/selection.js";
+export type { GlanceTpsThemeSlot } from "../theme/selection.js";
 export type SettingsSectionId = "appearance" | "status" | "working" | "input";
 export const SETTINGS_SECTIONS = [
 	{ id: "appearance", label: "Appearance" },
@@ -29,10 +29,10 @@ export type SettingsRow = RowBase &
 				kind: "toggle" | "choice";
 				selectedIndex: number;
 				options: readonly SettingOption[];
-				select(config: GlanceConfig, index: number): GlanceConfig;
+				select(config: GlanceTpsConfig, index: number): GlanceTpsConfig;
 		  }
 		| { kind: "shortcut"; key: string }
-		| { kind: "theme"; slot: GlanceThemeSlot }
+		| { kind: "theme"; slot: GlanceTpsThemeSlot }
 		| {
 				kind: "number";
 				number: number;
@@ -41,12 +41,12 @@ export type SettingsRow = RowBase &
 				step: number;
 				precision: number;
 				inputHint: string;
-				setValue(config: GlanceConfig, value: number): GlanceConfig;
+				setValue(config: GlanceTpsConfig, value: number): GlanceTpsConfig;
 		  }
 		| { kind: "segment"; segment: SegmentId; enabled: boolean }
 	);
 
-function descriptorRow(config: GlanceConfig, descriptor: SettingDescriptor): SettingsRow {
+function descriptorRow(config: GlanceTpsConfig, descriptor: SettingDescriptor): SettingsRow {
 	return {
 		id: descriptor.id,
 		label: descriptor.label,
@@ -65,28 +65,28 @@ function descriptorRow(config: GlanceConfig, descriptor: SettingDescriptor): Set
 
 const themeCatalogs = {
 	light: Object.freeze([
-		...GLANCE_THEMES.filter((theme) => theme.tone === "light"),
-		...GLANCE_THEMES.filter((theme) => theme.tone === "dark"),
+		...TACH_THEMES.filter((theme) => theme.tone === "light"),
+		...TACH_THEMES.filter((theme) => theme.tone === "dark"),
 	]),
 	dark: Object.freeze([
-		...GLANCE_THEMES.filter((theme) => theme.tone === "dark"),
-		...GLANCE_THEMES.filter((theme) => theme.tone === "light"),
+		...TACH_THEMES.filter((theme) => theme.tone === "dark"),
+		...TACH_THEMES.filter((theme) => theme.tone === "light"),
 	]),
 };
 
-export function getThemeCatalogForSlot(slot: GlanceThemeSlot) {
+export function getThemeCatalogForSlot(slot: GlanceTpsThemeSlot) {
 	return themeCatalogs[slot];
 }
 
-export function getThemeLabel(id: GlanceThemeName): string {
-	return GLANCE_THEMES.find((theme) => theme.id === id)?.label ?? id;
+export function getThemeLabel(id: GlanceTpsThemeName): string {
+	return TACH_THEMES.find((theme) => theme.id === id)?.label ?? id;
 }
 
 const appearance = [
 	toggleSetting(
 		"appearance.enabled",
-		"Glance",
-		"Use the Glance editor frame and status line.",
+		"GlanceTps",
+		"Use the GlanceTps editor frame and status line.",
 		(c) => c.enabled,
 		(c, v) => {
 			c.enabled = v;
@@ -189,7 +189,7 @@ const sweepColor = choiceSetting(
 	(c, value) => { c.editor.workingSweepColor = value; },
 );
 
-function activityNumber(config: GlanceConfig, id: string, label: string,
+function activityNumber(config: GlanceTpsConfig, id: string, label: string,
 	field: "workingSweepSpeed" | "summarySpeedMultiplier" | "retryBlinkHz", spec: NumericSettingSpec,
 	value: string, unit: string, hint: string): SettingsRow {
 	return {
@@ -212,7 +212,7 @@ const segmentHints: Record<SegmentId, string> = {
 	model: "Model name, provider and thinking level. Always the last status item removed.",
 };
 
-export function getSettingsRows(config: GlanceConfig, section: SettingsSectionId, segment?: SegmentId): SettingsRow[] {
+export function getSettingsRows(config: GlanceTpsConfig, section: SettingsSectionId, segment?: SegmentId): SettingsRow[] {
 	if (section === "status") {
 		if (segment) return getSegmentSettings(segment).map((descriptor) => descriptorRow(config, descriptor));
 		return config.segments.map(({ id, enabled }) => ({
@@ -258,8 +258,8 @@ export function getSettingsRows(config: GlanceConfig, section: SettingsSectionId
 			value: getThemeLabel(config.theme[slot]),
 			hint:
 				slot === "light"
-					? "Glance colors for Pi's light or unrecognized theme. Does not change Pi's theme."
-					: "Glance colors for Pi's dark theme. Does not change Pi's theme.",
+					? "GlanceTps colors for Pi's light or unrecognized theme. Does not change Pi's theme."
+					: "GlanceTps colors for Pi's dark theme. Does not change Pi's theme.",
 			kind: "theme" as const,
 			slot,
 		})),

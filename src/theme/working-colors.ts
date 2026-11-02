@@ -1,4 +1,4 @@
-import type { GlanceThemeName, Rgb, WorkingSweepColor } from "../types.js";
+import type { GlanceTpsThemeName, Rgb, WorkingSweepColor } from "../types.js";
 
 function rgb(hex: number): Rgb {
 	return { r: hex >> 16 & 255, g: hex >> 8 & 255, b: hex & 255 };
@@ -30,7 +30,7 @@ export const WORKING_ACCENTS = {
 	"everforest-light": rgb(0x8700af),
 	"high-contrast-dark": rgb(0xffff00),
 	"high-contrast-light": rgb(0xaf00af),
-} satisfies Record<GlanceThemeName, Rgb>;
+} satisfies Record<GlanceTpsThemeName, Rgb>;
 
 // Theme-family accents, with deeper light variants and brighter dark variants.
 // These are beam peaks, not replacements for the theme's status or border colors.
@@ -79,8 +79,8 @@ const COLOR_PRESETS = {
 		teal: 0x5fffff, mint: 0xafff87, coral: 0xff875f, copper: 0xffaf5f },
 	"high-contrast-light": { amber: 0x875f00, rose: 0xaf005f, violet: 0x8700af, blue: 0x0000af,
 		teal: 0x0066af, mint: 0x005f00, coral: 0xaf0000, copper: 0x875f5f },
-} satisfies Record<GlanceThemeName, Record<Exclude<WorkingSweepColor, "theme">, number>>;
+} satisfies Record<GlanceTpsThemeName, Record<Exclude<WorkingSweepColor, "theme">, number>>;
 
-export function workingAccent(theme: GlanceThemeName, color: WorkingSweepColor = "theme"): Rgb {
+export function workingAccent(theme: GlanceTpsThemeName, color: WorkingSweepColor = "theme"): Rgb {
 	return color === "theme" ? WORKING_ACCENTS[theme] : rgb(COLOR_PRESETS[theme][color]);
 }

@@ -11,7 +11,7 @@ test("new and legacy configurations use Text, retaining the user's sweep prefere
 			...defaults.editor, activityMode: "text", workingSweep: workingSweep === "top" || workingSweep === true ? "top" : "perimeter",
 			workingSweepSpeed: 80, workingSweepColor: "teal",
 		});
-		assert.equal(config.enabled, false, "migration must not turn Glance on");
+		assert.equal(config.enabled, false, "migration must not turn GlanceTps on");
 		assert.equal(config.version, 15);
 	}
 });

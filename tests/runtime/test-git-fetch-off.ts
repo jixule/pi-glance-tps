@@ -7,7 +7,7 @@ import { defaultConfig } from "../../src/config/model.js";
 import { GitRefresher } from "../../src/runtime/git.js";
 
 test("turning off auto-fetch cancels a running network child while local refresh remains available", { skip: process.platform === "win32" }, async () => {
-	const directory = mkdtempSync(join(tmpdir(), "glance-fetch-off-"));
+	const directory = mkdtempSync(join(tmpdir(), "glance-tps-fetch-off-"));
 	const previousPath = process.env.PATH;
 	const config = defaultConfig().git; config.changes = "marker";
 	let snapshots = 0;

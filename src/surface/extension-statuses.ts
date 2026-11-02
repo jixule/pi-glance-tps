@@ -1,6 +1,6 @@
 import { sliceByColumn, stripTerminalSequences, truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
 
-import type { ResolvedGlanceStyles } from "../theme/adapter.js";
+import type { ResolvedGlanceTpsStyles } from "../theme/adapter.js";
 
 export const EXTENSION_STATUS_RESET = "\x1b[0m\x1b]8;;\x1b\\";
 
@@ -54,7 +54,7 @@ export function extensionStatusTexts(statuses?: ReadonlyMap<string, string>): st
 }
 
 /** Prefer complete leading entries; only clip when the first entry alone is too long. */
-export function fitExtensionStatuses(texts: readonly string[], width: number, styles: ResolvedGlanceStyles): string | undefined {
+export function fitExtensionStatuses(texts: readonly string[], width: number, styles: ResolvedGlanceTpsStyles): string | undefined {
 	if (width < 4 || texts.length === 0) return undefined;
 	const separator = styles.separator(" · "), ellipsis = styles.dim("…");
 	const parts = texts.map(text => `${styles.text(text)}${EXTENSION_STATUS_RESET}`);

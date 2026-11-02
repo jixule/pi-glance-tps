@@ -11,7 +11,7 @@ import { RuntimeRefreshSession } from "../../src/runtime/refresh-session.js";
 
 // Run actual Pi request, tool, warming and settlement events; only the provider and clock are local.
 for (const warmAt of ["tool", "context", "stream"] as const) test(`Pi cache warming during ${warmAt} preserves throughput request boundaries`, async () => {
-	const root = await mkdtemp(join(tmpdir(), "glance-throughput-host-"));
+	const root = await mkdtemp(join(tmpdir(), "glance-tps-throughput-host-"));
 	const config = defaultConfig();
 	let now = 0, primaryCalls = 0, warmingCalls = 0, requestEvents = 0;
 	let completeWarm!: () => void;
@@ -31,7 +31,7 @@ for (const warmAt of ["tool", "context", "stream"] as const) test(`Pi cache warm
 			cwd: root, agentDir: root, settingsManager, noExtensions: true, noSkills: true,
 			noPromptTemplates: true, noThemes: true, noContextFiles: true,
 			extensionFactories: [pi => {
-				pi.registerProvider("glance-throughput-test", {
+				pi.registerProvider("glance-tps-throughput-test", {
 					api: "openai-completions", baseUrl: "https://example.invalid", apiKey: "DEMO-not-a-credential",
 					models: [{ id: "local", name: "DEMO local", reasoning: false, input: ["text"], contextWindow: 200_000,
 						maxTokens: 128, cost: { input: 10, output: 1, cacheRead: 0.01, cacheWrite: 0 }, promptCache: { short: 10.001, long: 10.001 } }],
@@ -83,7 +83,7 @@ for (const warmAt of ["tool", "context", "stream"] as const) test(`Pi cache warm
 				parameters: Type.Object({}),
 				execute: async () => { if (warmAt === "tool") await warmed; return { content: [{ type: "text", text: "DEMO tool complete" }], details: undefined }; } }],
 		}));
-		const model = modelRuntime.getModel("glance-throughput-test", "local");
+		const model = modelRuntime.getModel("glance-tps-throughput-test", "local");
 		assert.ok(model);
 		await session.setModel(model);
 		await session.bindExtensions({});

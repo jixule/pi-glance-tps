@@ -4,16 +4,16 @@ import { truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
 import { defaultConfig } from "../../src/config/model.js";
 import { stripControls } from "../../src/surface/format.js";
 import { PALETTES, fg, fg256 } from "../../src/theme/palette.js";
-import { resolveBuiltInGlanceStyles } from "../../src/theme/adapter.js";
-import { GLANCE_THEME_IDS } from "../../src/theme/themes.js";
+import { resolveBuiltInGlanceTpsStyles } from "../../src/theme/adapter.js";
+import { TACH_THEME_IDS } from "../../src/theme/themes.js";
 import { testState } from "../support/helpers.js";
-import type { BuiltinSegmentId, GlanceConfig, GlanceState, GlanceThemeName, SegmentId } from "../../src/types.js";
+import type { BuiltinSegmentId, GlanceTpsConfig, GlanceTpsState, GlanceTpsThemeName, SegmentId } from "../../src/types.js";
 
-import { renderGlanceLine } from "../../src/surface/status-line.js";
+import { renderGlanceTpsLine } from "../../src/surface/status-line.js";
 
 const RESET = "\x1b[0m";
 
-function configWithSegments(ids: SegmentId[], mutate?: (config: GlanceConfig) => void): GlanceConfig {
+function configWithSegments(ids: SegmentId[], mutate?: (config: GlanceTpsConfig) => void): GlanceTpsConfig {
 	const config = defaultConfig();
 	config.icons = "plain";
 	config.segments = ids.map((id) => ({ id, enabled: true }));
@@ -21,38 +21,38 @@ function configWithSegments(ids: SegmentId[], mutate?: (config: GlanceConfig) =>
 	return config;
 }
 
-function useTheme(config: GlanceConfig, theme: GlanceThemeName): void {
+function useTheme(config: GlanceTpsConfig, theme: GlanceTpsThemeName): void {
 	config.theme = { light: theme, dark: theme };
 }
 
 function plainLine(
 	ids: SegmentId[],
-	state: GlanceState = testState(),
+	state: GlanceTpsState = testState(),
 	width = 120,
 	providerCount = state.providers.availableCount,
-	mutate?: (config: GlanceConfig) => void,
+	mutate?: (config: GlanceTpsConfig) => void,
 ): string {
-	return stripControls(renderGlanceLine(state, configWithSegments(ids, mutate), width, providerCount));
+	return stripControls(renderGlanceTpsLine(state, configWithSegments(ids, mutate), width, providerCount));
 }
 
 function rawLine(
 	ids: SegmentId[],
-	state: GlanceState = testState(),
+	state: GlanceTpsState = testState(),
 	width = 120,
 	providerCount = state.providers.availableCount,
-	mutate?: (config: GlanceConfig) => void,
+	mutate?: (config: GlanceTpsConfig) => void,
 ): string {
-	return renderGlanceLine(state, configWithSegments(ids, mutate), width, providerCount);
+	return renderGlanceTpsLine(state, configWithSegments(ids, mutate), width, providerCount);
 }
 
-function modelState(providerCount = 1, thinking = "off"): GlanceState {
+function modelState(providerCount = 1, thinking = "off"): GlanceTpsState {
 	return testState({
 		providers: { availableCount: providerCount },
 		model: { id: "gpt-5.5", provider: "openai", displayName: "GPT 5.5", thinking },
 	});
 }
 
-function richState(): GlanceState {
+function richState(): GlanceTpsState {
 	const base = testState();
 	return testState({
 		git: { ...base.git, repo: true, branch: "main", status: "dirty", dirty: true, unstaged: 1 },
@@ -77,23 +77,23 @@ function lastColorBefore(text: string, index: number): string | undefined {
 	return last;
 }
 
-const singleSegmentParityCases: Array<{ id: BuiltinSegmentId; state: GlanceState; text: string }> = [
+const singleSegmentParityCases: Array<{ id: BuiltinSegmentId; state: GlanceTpsState; text: string }> = [
 	{ id: "git", state: richState(), text: "git main *" },
 	{ id: "cost", state: richState(), text: "$0.042" },
-	{ id: "throughput", state: testState(), text: "spd ? tok/s" },
+	{ id: "throughput", state: testState(), text: "spd ? t/s" },
 	{ id: "context", state: richState(), text: "ctx 23% 47k/200k" },
 	{ id: "tokens", state: richState(), text: "tok ↑12k ↓3.1k 6%" },
 	{ id: "model", state: modelState(1), text: "ai GPT 5.5" },
 ];
 
-for (const themeId of GLANCE_THEME_IDS) {
+for (const themeId of TACH_THEME_IDS) {
 	const palette = PALETTES[themeId];
 	for (const { id, state, text } of singleSegmentParityCases) {
 		const config = configWithSegments([id], (next) => {
 			useTheme(next, themeId);
 		});
 		assert.equal(
-			renderGlanceLine(state, config, 120, state.providers.availableCount),
+			renderGlanceTpsLine(state, config, 120, state.providers.availableCount),
 			`${fg(palette.segments[id].fg, text)}${RESET}`,
 			`${themeId}.${id} status segment should keep exact palette styling through the adapter`,
 		);
@@ -104,7 +104,7 @@ await test("status-line should emit ANSI 256-color output when Pi reports trueco
 	const config = configWithSegments(["model"], (next) => {
 		useTheme(next, "light");
 	});
-	const ansi256 = renderGlanceLine(modelState(1), config, 120, 1, { trueColor: false });
+	const ansi256 = renderGlanceTpsLine(modelState(1), config, 120, 1, { trueColor: false });
 	assert.equal(
 		ansi256,
 		`${fg256(PALETTES.light.segments.model.fg, "ai GPT 5.5")}${RESET}`,
@@ -118,9 +118,9 @@ await test("status-line should honor an injected shared style context instead of
 	const config = configWithSegments(["model"], (next) => {
 		useTheme(next, "light");
 	});
-	const darkStyles = resolveBuiltInGlanceStyles("dark");
+	const darkStyles = resolveBuiltInGlanceTpsStyles("dark");
 	assert.equal(
-		renderGlanceLine(modelState(1), config, 120, 1, { styles: darkStyles }),
+		renderGlanceTpsLine(modelState(1), config, 120, 1, { styles: darkStyles }),
 		`${fg(PALETTES.dark.segments.model.fg, "ai GPT 5.5")}${RESET}`,
 		"status-line should honor an injected shared style context instead of resolving config.theme independently",
 	);
@@ -131,35 +131,35 @@ await test("status-line should resolve a theme pair through the light slot for a
 		next.theme = { light: "one-light", dark: "tokyo-night" };
 	});
 	assert.equal(
-		renderGlanceLine(modelState(1), config, 120, 1, { ambientTone: "light" }),
+		renderGlanceTpsLine(modelState(1), config, 120, 1, { ambientTone: "light" }),
 		`${fg(PALETTES["one-light"].segments.model.fg, "ai GPT 5.5")}${RESET}`,
 		"status-line should resolve a theme pair through the light slot for ambient light",
 	);
 	assert.equal(
-		renderGlanceLine(modelState(1), config, 120, 1, { ambientTone: "dark" }),
+		renderGlanceTpsLine(modelState(1), config, 120, 1, { ambientTone: "dark" }),
 		`${fg(PALETTES["tokyo-night"].segments.model.fg, "ai GPT 5.5")}${RESET}`,
 		"status-line should resolve a theme pair through the dark slot for ambient dark",
 	);
 	assert.equal(
-		renderGlanceLine(modelState(1), config, 120, 1),
+		renderGlanceTpsLine(modelState(1), config, 120, 1),
 		`${fg(PALETTES["one-light"].segments.model.fg, "ai GPT 5.5")}${RESET}`,
 		"status-line should default missing ambient tone to the light slot",
 	);
 	let ambientTone: "light" | "dark" = "light";
 	assert.equal(
-		renderGlanceLine(modelState(1), config, 120, 1, { getAmbientTone: () => ambientTone }),
+		renderGlanceTpsLine(modelState(1), config, 120, 1, { getAmbientTone: () => ambientTone }),
 		`${fg(PALETTES["one-light"].segments.model.fg, "ai GPT 5.5")}${RESET}`,
 		"status-line should call getAmbientTone lazily for light output",
 	);
 	ambientTone = "dark";
 	assert.equal(
-		renderGlanceLine(modelState(1), config, 120, 1, { getAmbientTone: () => ambientTone }),
+		renderGlanceTpsLine(modelState(1), config, 120, 1, { getAmbientTone: () => ambientTone }),
 		`${fg(PALETTES["tokyo-night"].segments.model.fg, "ai GPT 5.5")}${RESET}`,
 		"status-line should call getAmbientTone lazily for dark output",
 	);
-	const overrideStyles = resolveBuiltInGlanceStyles("dark");
+	const overrideStyles = resolveBuiltInGlanceTpsStyles("dark");
 	assert.equal(
-		renderGlanceLine(modelState(1), config, 120, 1, { styles: overrideStyles, ambientTone: "light" }),
+		renderGlanceTpsLine(modelState(1), config, 120, 1, { styles: overrideStyles, ambientTone: "light" }),
 		`${fg(PALETTES.dark.segments.model.fg, "ai GPT 5.5")}${RESET}`,
 		"status-line explicit styles override should win over ambient tone selection",
 	);
@@ -194,7 +194,7 @@ for (const themeId of ["light", "dark"] as const) {
 	const width = 12;
 	const expectedLine = `${fg(palette.segments.model.fg, "ai openai/GPT 5.5")}${RESET}`;
 	assert.equal(
-		renderGlanceLine(state, config, width, 2),
+		renderGlanceTpsLine(state, config, width, 2),
 		truncateToWidth(expectedLine, width, fg(palette.dim, "…")),
 		`${themeId} truncation should keep dim ellipsis styling through the adapter`,
 	);
@@ -203,7 +203,7 @@ for (const themeId of ["light", "dark"] as const) {
 await test("disabled config should render an empty status line", async () => {
 	const config = defaultConfig();
 	config.enabled = false;
-	assert.equal(renderGlanceLine(testState(), config, 120), "", "disabled config should render an empty status line");
+	assert.equal(renderGlanceTpsLine(testState(), config, 120), "", "disabled config should render an empty status line");
 });
 
 await test("auto provider should hide provider when only one provider is available", async () => {
@@ -232,17 +232,17 @@ await test("auto provider should hide provider when only one provider is availab
 
 	const forcedDensityConfig = configWithSegments(["model"]);
 	assert.equal(
-		stripControls(renderGlanceLine(modelState(2, "high"), forcedDensityConfig, 120, 2, { widthMode: "full" })),
+		stripControls(renderGlanceTpsLine(modelState(2, "high"), forcedDensityConfig, 120, 2, { widthMode: "full" })),
 		"ai openai/GPT 5.5 high",
 		"forced full preview density should retain provider and thinking detail at a wide physical width",
 	);
 	assert.equal(
-		stripControls(renderGlanceLine(modelState(2, "high"), forcedDensityConfig, 120, 2, { widthMode: "compact" })),
+		stripControls(renderGlanceTpsLine(modelState(2, "high"), forcedDensityConfig, 120, 2, { widthMode: "compact" })),
 		"ai GPT 5.5",
 		"forced compact preview density should fold optional Provider and Thinking details",
 	);
 	assert.equal(
-		stripControls(renderGlanceLine(modelState(2, "high"), forcedDensityConfig, 120, 2, { widthMode: "minimal" })),
+		stripControls(renderGlanceTpsLine(modelState(2, "high"), forcedDensityConfig, 120, 2, { widthMode: "minimal" })),
 		"ai GPT 5.5",
 		"forced minimal preview density should fold provider and thinking detail without changing physical width",
 	);
@@ -326,7 +326,7 @@ await test("compact status should prioritize the configured Tokens cache rate wi
 		config.icons = "nerd";
 	});
 	assert.equal(
-		stripControls(renderGlanceLine(reportedState, reportedConfig, 75, 1)),
+		stripControls(renderGlanceTpsLine(reportedState, reportedConfig, 75, 1)),
 		" main · 󰈸 $302.0 ·  ?/s · 󰔟 53% · 󰄨 94% · 󰚩 GPT 5.6 sol",
 		"compact status should prioritize the configured Tokens cache rate with the same icon-plus-percent grammar as Context",
 	);
@@ -462,7 +462,7 @@ for (const icons of ["plain", "nerd"] as const) {
 		const config = configWithSegments(["git", "context", "cost", "tokens", "model"], (next) => {
 			next.icons = icons;
 		});
-		const rendered = renderGlanceLine(richState(), config, width, 2);
+		const rendered = renderGlanceTpsLine(richState(), config, width, 2);
 		assert.ok(stripControls(rendered).length > 0, `${icons} status line should render visible text at width ${width}`);
 		assert.ok(visibleWidth(rendered) <= width, `${icons} status line visible width should stay within budget ${width}`);
 	}

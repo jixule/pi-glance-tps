@@ -1,6 +1,6 @@
 import type { Component } from "@earendil-works/pi-tui";
 
-export class GlanceFooter implements Component {
+export class GlanceTpsFooter implements Component {
 	constructor(private readonly onDispose?: () => void) {}
 
 	dispose(): void { this.onDispose?.(); }

@@ -10,7 +10,7 @@ import { emptyGitSnapshot, parseGitStatus } from "../../src/runtime/git-snapshot
 import type { GitSnapshot } from "../../src/types.js";
 
 test("idle Git polls back off, still discover external edits, and yield to activity", { timeout: 10_000 }, async t => {
-	const cwd = mkdtempSync(join(tmpdir(), "glance-git-idle-"));
+	const cwd = mkdtempSync(join(tmpdir(), "glance-tps-git-idle-"));
 	const config = defaultConfig().git; config.autoFetch = false;
 	let scheduled: { run(): void; delay: number } | undefined;
 	let deliver: (snapshot: GitSnapshot) => void = () => {};

@@ -2,7 +2,7 @@ import { strict as assert } from "node:assert";
 import type { ExtensionContext, KeybindingsManager } from "@earendil-works/pi-coding-agent";
 import { TuiMainScreen, TuiAltScreen, isViewportTUI, visibleWidth, type EditorTheme, type Terminal, type TUI } from "@earendil-works/pi-tui";
 import { defaultConfig } from "../../src/config/model.js";
-import { GlanceEditor } from "../../src/surface/editor.js";
+import { GlanceTpsEditor } from "../../src/surface/editor.js";
 import { createGitHarness, createRuntimeHarness, createRuntimeTestContext } from "../support/runtime-harness.js";
 import { nativeActivity } from "../support/activity-harness.js";
 import { richInputSurfaceState, stripAnsi } from "../support/surface-test-harness.js";
@@ -65,8 +65,8 @@ const harness = createRuntimeHarness({
 });
 
 harness.runtime.events.sessionStart({ type: "session_start" }, test.ctx as ExtensionContext);
-const editorFactory = test.editorFactories[0] as unknown as (tui: TUI, theme: EditorTheme, keybindings: KeybindingsManager) => GlanceEditor;
-assert.ok(editorFactory, "enabled session should expose the Glance custom-editor factory for Pi fullscreen mode");
+const editorFactory = test.editorFactories[0] as unknown as (tui: TUI, theme: EditorTheme, keybindings: KeybindingsManager) => GlanceTpsEditor;
+assert.ok(editorFactory, "enabled session should expose the GlanceTps custom-editor factory for Pi fullscreen mode");
 
 const terminal = createTerminal();
 const fullscreen = new TuiAltScreen(terminal, false, undefined, { mouse: false });
@@ -80,14 +80,14 @@ fullscreen.requestRender = () => {
 const editor = editorFactory(fullscreen, editorTheme, keybindings);
 fullscreen.addChild(editor);
 fullscreen.setFocus(editor);
-assert.equal(editor.focused, true, "Pi fullscreen focus should propagate to GlanceEditor through the public Focusable seam");
+assert.equal(editor.focused, true, "Pi fullscreen focus should propagate to GlanceTpsEditor through the public Focusable seam");
 editor.setText("first fullscreen line\n第二行🙂");
-assert.equal(editor.getText(), "first fullscreen line\n第二行🙂", "fullscreen GlanceEditor should retain inherited multiline and Unicode editing state");
+assert.equal(editor.getText(), "first fullscreen line\n第二行🙂", "fullscreen GlanceTpsEditor should retain inherited multiline and Unicode editing state");
 
 function assertFullscreenFrame(width: number, label: string): string {
 	const direct = editor.render(width);
 	const mounted = fullscreen.render(width);
-	assert.deepEqual(mounted, direct, `${label}: the fullscreen TUI should render the mounted GlanceEditor without a mode-specific wrapper`);
+	assert.deepEqual(mounted, direct, `${label}: the fullscreen TUI should render the mounted GlanceTpsEditor without a mode-specific wrapper`);
 	for (const [index, line] of mounted.entries()) {
 		assert.ok(visibleWidth(line) <= width, `${label}: fullscreen line ${index} should fit width ${width}: ${stripAnsi(line)}`);
 	}
@@ -95,7 +95,7 @@ function assertFullscreenFrame(width: number, label: string): string {
 }
 
 const initialFrame = assertFullscreenFrame(120, "initial /thinking state");
-assert.ok(initialFrame.includes("󰚩 GPT 5.6 sol"), "fullscreen Glance status should show the current model");
+assert.ok(initialFrame.includes("󰚩 GPT 5.6 sol"), "fullscreen GlanceTps status should show the current model");
 assert.equal(initialFrame.includes("GPT 5.6 sol max"), false, "thinking off should not add a label before /thinking changes it");
 
 const renderBaseline = fullscreenRenderRequests;
@@ -111,7 +111,7 @@ assert.ok(maxFrame.includes("󰚩 GPT 5.6 sol max"), "Pi /thinking selection sho
 assert.ok(fullscreenRenderRequests > renderBaseline, "Pi /thinking selection should request a render from the active fullscreen TUI");
 assert.equal(test.getEntryReads(), entryBaseline, "Pi /thinking selection should not rescan persisted session entries");
 assert.equal(test.getBranchReads(), branchBaseline, "Pi /thinking selection should not read the production session branch");
-assert.deepEqual(harness.savedConfigs, [], "session-scoped Pi /thinking selection should not write pi-glance configuration");
+assert.deepEqual(harness.savedConfigs, [], "session-scoped Pi /thinking selection should not write pi-glance-tps configuration");
 
 thinkingLevel = "off";
 test.setModel({ id: "non-reasoning-mini", name: "Mini", provider: "openai", contextWindow: 128_000 });
@@ -127,7 +127,7 @@ editor.setText("  !!pwd");
 const bashBorder = (text: string) => `\x1b[38;5;208m${text}\x1b[39m`;
 editor.borderColor = bashBorder;
 assertFullscreenFrame(120, "Pi Bash mode in fullscreen");
-assert.ok(fullscreen.render(120)[0]!.startsWith(bashBorder("╭")), "fullscreen Glance frame should retain the public Pi Bash border cue");
+assert.ok(fullscreen.render(120)[0]!.startsWith(bashBorder("╭")), "fullscreen GlanceTps frame should retain the public Pi Bash border cue");
 
 editor.setText("x");
 for (const width of [4, 16, 56, 80]) {
@@ -141,7 +141,7 @@ fullscreen.clear();
 for (const tui of [new TuiMainScreen(createTerminal()), new TuiAltScreen(createTerminal(), false, undefined, { mouse: false })]) {
 	const loopConfig = defaultConfig(); loopConfig.editor.activityMode = "sweep"; loopConfig.editor.workingSweep = "perimeter";
 	let elapsed = 0;
-	const loopEditor = new GlanceEditor(tui, editorTheme, keybindings, richInputSurfaceState, () => loopConfig, { animationNowMs: () => elapsed, scheduleAnimationFrame: () => () => {} });
+	const loopEditor = new GlanceTpsEditor(tui, editorTheme, keybindings, richInputSurfaceState, () => loopConfig, { animationNowMs: () => elapsed, scheduleAnimationFrame: () => () => {} });
 	tui.addChild(loopEditor); tui.setFocus(loopEditor);
 	loopEditor.setText("Working loop\n中文🙂 draft");
 	for (const width of [180, 80, 16, 4, 1, 120]) {

@@ -8,7 +8,7 @@ import { defaultConfig } from "../../src/config/model.js";
 import { collectGitSnapshot } from "../../src/runtime/git.js";
 
 test("Summary counts each changed file once and measures net tracked lines, including a nested untracked directory", async () => {
-	const cwd = mkdtempSync(join(tmpdir(), "glance-summary-"));
+	const cwd = mkdtempSync(join(tmpdir(), "glance-tps-summary-"));
 	const git = (...args: string[]) => execFileSync("git", ["-C", cwd, "-c", "core.hooksPath=/dev/null", ...args], { stdio: "pipe" });
 	try {
 		git("init", "-q");

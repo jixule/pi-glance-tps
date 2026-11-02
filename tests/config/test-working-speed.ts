@@ -21,7 +21,7 @@ test("speed defaults to 47, normalizes to 10–120 and preserves all saved modes
 });
 
 test("schema v10 picks up speed in memory only and explicit save persists it atomically", async () => {
-	const directory = await mkdtemp(join(tmpdir(), "glance-speed-"));
+	const directory = await mkdtemp(join(tmpdir(), "glance-tps-speed-"));
 	try {
 		const path = join(directory, "config.json"), store = createConfigStore(path);
 		const config = defaultConfig();

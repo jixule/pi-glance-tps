@@ -3,12 +3,12 @@ import { test } from "node:test";
 import { defaultConfig } from "../../src/config/model.js";
 import { WORKING_SWEEP_COLOR_VALUES } from "../../src/config/options.js";
 import { renderInputSurfaceFrame } from "../../src/surface/frame.js";
-import { resolveBuiltInGlanceStyles } from "../../src/theme/adapter.js";
-import { GLANCE_THEMES } from "../../src/theme/themes.js";
+import { resolveBuiltInGlanceTpsStyles } from "../../src/theme/adapter.js";
+import { TACH_THEMES } from "../../src/theme/themes.js";
 import { richInputSurfaceState, stripAnsi } from "../support/surface-test-harness.js";
 import { ActivityClock, activityMotion } from "../../src/runtime/activity-animation.js";
 import { createInputSurfaceRenderer } from "../../src/surface/renderer.js";
-import { GlanceEditor } from "../../src/surface/editor.js";
+import { GlanceTpsEditor } from "../../src/surface/editor.js";
 import { animationTime, nativeActivity } from "../support/activity-harness.js";
 import type { KeybindingsManager } from "@earendil-works/pi-coding-agent";
 import type { EditorTheme, TUI } from "@earendil-works/pi-tui";
@@ -18,11 +18,11 @@ test("retry blinks only the selected border area for every palette, effect color
 	const state = richInputSurfaceState(); state.workspace = { name: "DEMO", path: "/DEMO" };
 	const content = `\x1b[4m中文🙂 draft\x1b[24m${CURSOR_MARKER}`;
 	const fact = "\x1b[31mDEMO FACTS\x1b[39m";
-	for (const palette of GLANCE_THEMES) for (const depth of ["truecolor", "ansi256"] as const)
+	for (const palette of TACH_THEMES) for (const depth of ["truecolor", "ansi256"] as const)
 		for (const color of WORKING_SWEEP_COLOR_VALUES) for (const area of ["top", "perimeter"] as const) {
 			const config = defaultConfig(); config.editor.activityMode = "sweep"; config.editor.workingSweep = area;
 			config.icons = "plain"; config.editor.topMarginRows = 0; config.display.workspaceLabel = "name";
-			const styles = resolveBuiltInGlanceStyles(palette.id, depth, color);
+			const styles = resolveBuiltInGlanceTpsStyles(palette.id, depth, color);
 			const input = { state, config, width: 100, styles, body: { kind: "editor" as const, lines: [content] },
 				status: { render: () => fact }, chrome: { hasDraft: true } };
 			const idle = renderInputSurfaceFrame(input);
@@ -40,7 +40,7 @@ test("retry blinks only the selected border area for every palette, effect color
 
 test("text activity shares the border with scrolling, not the stash, and never enables a supplied animation", () => {
 	const config = defaultConfig(); config.icons = "plain";
-	const styles = resolveBuiltInGlanceStyles("dark");
+	const styles = resolveBuiltInGlanceTpsStyles("dark");
 	const input = { state: richInputSurfaceState(), config, width: 100, styles, body: { kind: "preview" as const },
 		chrome: { hasDraft: true, bottomScrollIndicator: "─── ↓ 3 more ", activity: { kind: "retry" as const, render: () => "Retrying (2/3) in 8s (esc to cancel)" } } };
 	const idle = renderInputSurfaceFrame(input);
@@ -55,7 +55,7 @@ test("native editor and preview use identical activity geometry and motion for e
 	const identity = (text: string) => text;
 	const theme: EditorTheme = { borderColor: identity, selectList: { selectedPrefix: identity, selectedText: identity, description: identity, scrollInfo: identity, noMatch: identity } };
 	let kind: "working" | "compaction" | "branchSummary" | "retry" | undefined;
-	const editor = new GlanceEditor({ terminal: { rows: 38 }, requestRender() {} } as unknown as TUI,
+	const editor = new GlanceTpsEditor({ terminal: { rows: 38 }, requestRender() {} } as unknown as TUI,
 		theme, { matches: () => false } as unknown as KeybindingsManager, () => state, () => config,
 		{ animationNowMs: time.now, scheduleAnimationFrame: time.schedule });
 	editor.focused = true;

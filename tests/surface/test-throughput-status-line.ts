@@ -3,33 +3,33 @@ import { strict as assert } from "node:assert";
 import { visibleWidth } from "@earendil-works/pi-tui";
 import { defaultConfig } from "../../src/config/model.js";
 import { stripControls } from "../../src/surface/format.js";
-import { renderGlanceLine } from "../../src/surface/status-line.js";
+import { renderGlanceTpsLine } from "../../src/surface/status-line.js";
 import { testState } from "../support/helpers.js";
-import type { GlanceConfig, GlanceState } from "../../src/types.js";
+import type { GlanceTpsConfig, GlanceTpsState } from "../../src/types.js";
 
 import type { SegmentConfig as SegmentConfigLike, ThroughputPrecision, ModelSpeedMeasurement as ThroughputTurnFixture } from "../../src/types.js";
 
-function setSegments(config: GlanceConfig, segments: SegmentConfigLike[]): GlanceConfig {
+function setSegments(config: GlanceTpsConfig, segments: SegmentConfigLike[]): GlanceTpsConfig {
 	(config).segments = segments;
 	return config;
 }
 
-function setPrecision(config: GlanceConfig, precision: ThroughputPrecision): GlanceConfig {
+function setPrecision(config: GlanceTpsConfig, precision: ThroughputPrecision): GlanceTpsConfig {
 	(config).throughput = { precision };
 	return config;
 }
 
-function withThroughput(state: GlanceState, lastRun: ThroughputTurnFixture | null, currentRun: ThroughputTurnFixture | null = null): GlanceState {
+function withThroughput(state: GlanceTpsState, lastRun: ThroughputTurnFixture | null, currentRun: ThroughputTurnFixture | null = null): GlanceTpsState {
 	(state).throughput = { lastRun, currentRun };
 	return state;
 }
 
-function plain(state: GlanceState, config: GlanceConfig, width: number): string {
-	return stripControls(renderGlanceLine(state, config, width));
+function plain(state: GlanceTpsState, config: GlanceTpsConfig, width: number): string {
+	return stripControls(renderGlanceTpsLine(state, config, width));
 }
 
-function plainPreservingSpaces(state: GlanceState, config: GlanceConfig, width: number): string {
-	return renderGlanceLine(state, config, width)
+function plainPreservingSpaces(state: GlanceTpsState, config: GlanceTpsConfig, width: number): string {
+	return renderGlanceTpsLine(state, config, width)
 		.replace(/\x1b\][^\x07]*(?:\x07|\x1b\\)/g, "")
 		.replace(/\x1b\[[0-?]*[ -/]*[@-~]/g, "")
 		.replace(/[\r\n\t]/g, " ")
@@ -47,7 +47,7 @@ await test("default status line should show finalized Output throughput between 
 	const state = withThroughput(testState(), sample);
 	assert.equal(
 		plain(state, config, 120),
-		"󰈸 $0.000 ·  20 tok/s · 󰔟 23% 47k/200k · 󰄨 ↑100 ↓50 󰑐0% · 󰚩 GPT 5.5",
+		"󰈸 $0.000 ·  20 t/s · 󰔟 23% 47k/200k · 󰄨 ↑100 ↓50 󰑐0% · 󰚩 GPT 5.5",
 		"default status line should show finalized Output throughput between Cost and Context while keeping Model last",
 	);
 });
@@ -59,18 +59,18 @@ await test("explicitly disabled throughput segment should render nothing, includ
 
 await test("enabled throughput full status should render unknown ? placeholder when both slots are null", async () => {
 	const config = setSegments({ ...defaultConfig(), icons: "plain" }, [{ id: "throughput", enabled: true }]);
-	assert.equal(plain(withThroughput(testState(), null), config, 120), "spd ? tok/s", "enabled throughput full status should render unknown ? placeholder when both slots are null");
+	assert.equal(plain(withThroughput(testState(), null), config, 120), "spd ? t/s", "enabled throughput full status should render unknown ? placeholder when both slots are null");
 	assert.equal(plain(withThroughput(testState(), null), config, 80), "spd ?/s", "enabled throughput compact status should render compact ?/s placeholder");
 	assert.equal(plain(withThroughput(testState(), null), config, 48), "spd ?/s", "enabled throughput minimal status should render compact ?/s placeholder");
 
 	const nerdConfig = setSegments({ ...defaultConfig(), icons: "nerd" }, [{ id: "throughput", enabled: true }]);
-	assert.equal(plainPreservingSpaces(withThroughput(testState(), null), nerdConfig, 120), "  ? tok/s", "nerd Output throughput icon should keep extra visual spacing before the placeholder");
+	assert.equal(plainPreservingSpaces(withThroughput(testState(), null), nerdConfig, 120), "  ? t/s", "nerd Output throughput icon should keep extra visual spacing before the placeholder");
 });
 
-await test("enabled throughput full status should render final plain icon plus tok/s copy", async () => {
+await test("enabled throughput full status should render final plain icon plus t/s copy", async () => {
 	const config = setSegments({ ...defaultConfig(), icons: "plain" }, [{ id: "throughput", enabled: true }]);
 	const state = withThroughput(testState(), sample);
-	assert.equal(plain(state, config, 120), "spd 20 tok/s", "full status keeps the concise tok/s label");
+	assert.equal(plain(state, config, 120), "spd 20 t/s", "full status keeps the concise t/s label");
 	assert.equal(plain(state, config, 80), "spd 20/s", "enabled throughput compact status should render final compact /s copy");
 	assert.equal(plain(state, config, 48), "spd 20/s", "enabled throughput minimal status should render final compact /s copy");
 });
@@ -79,7 +79,7 @@ await test("currentRun should win over lastRun and render with a provisional ~ m
 	const config = setSegments({ ...defaultConfig(), icons: "plain" }, [{ id: "throughput", enabled: true }]);
 	const current = turn(42);
 	const state = withThroughput(testState(), sample, current);
-	assert.equal(plain(state, config, 120), "spd ~42 tok/s", "currentRun should win over lastRun and render with a provisional ~ marker in full width");
+	assert.equal(plain(state, config, 120), "spd ~42 t/s", "currentRun should win over lastRun and render with a provisional ~ marker in full width");
 	assert.equal(plain(state, config, 80), "spd ~42/s", "currentRun should render with a provisional ~ marker in compact width");
 });
 
@@ -87,29 +87,29 @@ await test("invalid currentRun should fall back to a valid final lastRun", async
 	const config = setSegments({ ...defaultConfig(), icons: "plain" }, [{ id: "throughput", enabled: true }]);
 	const invalidCurrent = turn(0);
 	const invalidFinal = turn(Number.NaN);
-	assert.equal(plain(withThroughput(testState(), sample, invalidCurrent), config, 120), "spd 20 tok/s", "invalid currentRun should fall back to a valid final lastRun");
-	assert.equal(plain(withThroughput(testState(), invalidFinal, invalidCurrent), config, 120), "spd ? tok/s", "invalid currentRun and invalid lastRun should fall back to the unknown placeholder");
+	assert.equal(plain(withThroughput(testState(), sample, invalidCurrent), config, 120), "spd 20 t/s", "invalid currentRun should fall back to a valid final lastRun");
+	assert.equal(plain(withThroughput(testState(), invalidFinal, invalidCurrent), config, 120), "spd ? t/s", "invalid currentRun and invalid lastRun should fall back to the unknown placeholder");
 });
 
-await test("precision auto should keep one decimal below 10 tok/s", async () => {
+await test("precision auto should keep one decimal below 10 t/s", async () => {
 	const config = setSegments({ ...defaultConfig(), icons: "plain" }, [{ id: "throughput", enabled: true }]);
-	assert.equal(plain(withThroughput(testState(), turn(7.04)), setPrecision(config, "auto"), 120), "spd 7.0 tok/s", "precision auto should keep one decimal below 10 tok/s");
-	assert.equal(plain(withThroughput(testState(), turn(42.4)), setPrecision(defaultConfig(), "auto"), 120), "󰈸 $0.000 ·  42 tok/s · 󰔟 23% 47k/200k · 󰄨 ↑100 ↓50 󰑐0% · 󰚩 GPT 5.5", "precision auto should round integer-rate values at normal widths");
+	assert.equal(plain(withThroughput(testState(), turn(7.04)), setPrecision(config, "auto"), 120), "spd 7.0 t/s", "precision auto should keep one decimal below 10 t/s");
+	assert.equal(plain(withThroughput(testState(), turn(42.4)), setPrecision(defaultConfig(), "auto"), 120), "󰈸 $0.000 ·  42 t/s · 󰔟 23% 47k/200k · 󰄨 ↑100 ↓50 󰑐0% · 󰚩 GPT 5.5", "precision auto should round integer-rate values at normal widths");
 });
 
 await test("precision=1 should force one decimal for low rates", async () => {
 	const config = setSegments(setPrecision({ ...defaultConfig(), icons: "plain" }, 1), [{ id: "throughput", enabled: true }]);
-	assert.equal(plain(withThroughput(testState(), turn(7)), config, 120), "spd 7.0 tok/s", "precision=1 should force one decimal for low rates");
-	assert.equal(plain(withThroughput(testState(), turn(42)), config, 120), "spd 42.0 tok/s", "precision=1 should force one decimal for normal rates");
-	assert.equal(plain(withThroughput(testState(), turn(1_234)), config, 120), "spd 1.2k tok/s", "precision=1 should apply to compact k mantissas for large rates");
-	assert.equal(plain(withThroughput(testState(), turn(1_234_567)), config, 120), "spd 1.2M tok/s", "precision=1 should apply to compact M mantissas for very large rates");
+	assert.equal(plain(withThroughput(testState(), turn(7)), config, 120), "spd 7.0 t/s", "precision=1 should force one decimal for low rates");
+	assert.equal(plain(withThroughput(testState(), turn(42)), config, 120), "spd 42.0 t/s", "precision=1 should force one decimal for normal rates");
+	assert.equal(plain(withThroughput(testState(), turn(1_234)), config, 120), "spd 1.2k t/s", "precision=1 should apply to compact k mantissas for large rates");
+	assert.equal(plain(withThroughput(testState(), turn(1_234_567)), config, 120), "spd 1.2M t/s", "precision=1 should apply to compact M mantissas for very large rates");
 });
 
 await test("precision=0 should round to integer for low rates", async () => {
 	const config = setSegments(setPrecision({ ...defaultConfig(), icons: "plain" }, 0), [{ id: "throughput", enabled: true }]);
-	assert.equal(plain(withThroughput(testState(), turn(7.4)), config, 120), "spd 7 tok/s", "precision=0 should round to integer for low rates");
-	assert.equal(plain(withThroughput(testState(), turn(42.4)), config, 120), "spd 42 tok/s", "precision=0 should round to integer for normal rates");
-	assert.equal(plain(withThroughput(testState(), turn(1_234)), config, 120), "spd 1k tok/s", "precision=0 should apply to compact k mantissas for large rates");
+	assert.equal(plain(withThroughput(testState(), turn(7.4)), config, 120), "spd 7 t/s", "precision=0 should round to integer for low rates");
+	assert.equal(plain(withThroughput(testState(), turn(42.4)), config, 120), "spd 42 t/s", "precision=0 should round to integer for normal rates");
+	assert.equal(plain(withThroughput(testState(), turn(1_234)), config, 120), "spd 1k t/s", "precision=0 should apply to compact k mantissas for large rates");
 });
 
 await test("roomy default-order status should include Git when available", async () => {
@@ -125,11 +125,11 @@ await test("roomy default-order status should include Git when available", async
 	);
 	const roomy = plain(richState, config, 160);
 	assert.ok(roomy.includes(" main ●"), "roomy default-order status should include Git when available");
-	assert.ok(roomy.includes(" 20 tok/s"), "roomy default-order status should include Output throughput by default");
+	assert.ok(roomy.includes(" 20 t/s"), "roomy default-order status should include Output throughput by default");
 	assert.ok(roomy.includes("󰚩 GPT 5.5 high"), "roomy default-order status should include Model");
 	assert.ok(roomy.includes("󰄨 ↑12k ↓3.1k 󰑐6%"), "roomy default-order status should include Tokens and cache rate");
-	assert.ok(roomy.indexOf("$0.042") < roomy.indexOf(" 20 tok/s"), "Cost should render before Output throughput by default");
-	assert.ok(roomy.indexOf(" 20 tok/s") < roomy.indexOf("󰔟 23% 47k/200k"), "Output throughput should render before Context by default");
+	assert.ok(roomy.indexOf("$0.042") < roomy.indexOf(" 20 t/s"), "Cost should render before Output throughput by default");
+	assert.ok(roomy.indexOf(" 20 t/s") < roomy.indexOf("󰔟 23% 47k/200k"), "Output throughput should render before Context by default");
 	assert.ok(roomy.indexOf("󰔟 23% 47k/200k") < roomy.indexOf("󰄨 ↑12k ↓3.1k 󰑐6%"), "Tokens should render after Context by default");
 	assert.ok(roomy.indexOf("󰄨 ↑12k ↓3.1k 󰑐6%") < roomy.indexOf("󰚩 GPT 5.5 high"), "Model should stay last after Tokens");
 

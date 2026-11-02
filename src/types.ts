@@ -1,10 +1,10 @@
-import type { GlanceThemeName } from "./theme/themes.js";
+import type { GlanceTpsThemeName } from "./theme/themes.js";
 
-export type { GlanceThemeName } from "./theme/themes.js";
+export type { GlanceTpsThemeName } from "./theme/themes.js";
 
-export interface GlanceThemePair {
-	light: GlanceThemeName;
-	dark: GlanceThemeName;
+export interface GlanceTpsThemePair {
+	light: GlanceTpsThemeName;
+	dark: GlanceTpsThemeName;
 }
 
 export type BuiltinSegmentId = "git" | "model" | "context" | "tokens" | "cost" | "throughput";
@@ -86,10 +86,10 @@ interface ThroughputConfig {
 	precision: ThroughputPrecision;
 }
 
-export interface GlanceConfig {
+export interface GlanceTpsConfig {
 	version: 15;
 	enabled: boolean;
-	theme: GlanceThemePair;
+	theme: GlanceTpsThemePair;
 	icons: IconMode;
 	editor: EditorConfig;
 	display: DisplayConfig;
@@ -126,6 +126,20 @@ export interface ModelSpeedMeasurement {
 	tokensPerSecond: number;
 }
 
+/**
+ * Live streaming speed for the status line. Unlike ModelSpeedMeasurement this is
+ * a content-estimate rate refreshed while tokens stream, so it can refresh the
+ * status line long before the provider reports final usage.
+ */
+export interface LiveSpeedReading {
+	/** Smoothed rate while generating; the final generation-window average afterwards. */
+	tokensPerSecond: number;
+	/** True while the assistant message is still streaming. */
+	generating: boolean;
+	/** Spinner frame shown while generating. */
+	spinnerFrame: string;
+}
+
 export interface GitChangeSummary {
 	files: number;
 	additions: number | null;
@@ -152,7 +166,7 @@ export interface GitSnapshot {
 	updatedAt: number;
 }
 
-export interface GlanceState {
+export interface GlanceTpsState {
 	workspace: {
 		name: string;
 		path: string;
@@ -177,6 +191,8 @@ export interface GlanceState {
 		lastRun: ModelSpeedMeasurement | null;
 		currentRun: ModelSpeedMeasurement | null;
 	};
+	/** Streaming speed; null when no assistant content has streamed yet. */
+	liveSpeed: LiveSpeedReading | null;
 	version: number;
 }
 
@@ -190,7 +206,7 @@ interface SegmentPalette {
 	fg: Rgb;
 }
 
-export interface GlancePalette {
+export interface GlanceTpsPalette {
 	text: Rgb;
 	dim: Rgb;
 	warn: Rgb;
@@ -227,8 +243,8 @@ export interface SegmentData {
 }
 
 export interface SegmentRenderContext {
-	state: GlanceState;
-	config: GlanceConfig;
+	state: GlanceTpsState;
+	config: GlanceTpsConfig;
 	widthMode: WidthMode;
 	icons: IconSet;
 	showProvider: boolean;

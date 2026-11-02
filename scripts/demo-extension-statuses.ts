@@ -1,7 +1,7 @@
 /** Local test publisher: no credentials, HTTP requests, timers or subscription changes. */
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 
-const KEYS = ["glance-demo-1-quota", "glance-demo-2-worker", "glance-demo-3-tools"] as const;
+const KEYS = ["glance-tps-demo-1-quota", "glance-tps-demo-2-worker", "glance-tps-demo-3-tools"] as const;
 const MODES = ["normal", "low", "long", "clear"] as const;
 
 export default function demoExtensionStatuses(pi: ExtensionAPI): void {
@@ -21,13 +21,13 @@ export default function demoExtensionStatuses(pi: ExtensionAPI): void {
 	}
 	pi.on("session_start", (_event, ctx) => publish(ctx, "normal"));
 	pi.on("session_shutdown", (_event, ctx) => clear(ctx));
-	pi.registerCommand("glance-demo", {
+	pi.registerCommand("glance-tps-demo", {
 		description: "Simulated quota statuses only: normal, low, long, clear",
 		getArgumentCompletions: prefix => MODES.filter(mode => mode.startsWith(prefix)).map(mode => ({ value: mode, label: mode })),
 		handler: async (args, ctx) => {
 			const mode = args.trim() || "normal";
 			if (!MODES.some(value => value === mode)) {
-				ctx.ui.notify("Usage: /glance-demo normal|low|long|clear. DEMO values are not real quotas.", "info");
+				ctx.ui.notify("Usage: /glance-tps-demo normal|low|long|clear. DEMO values are not real quotas.", "info");
 				return;
 			}
 			publish(ctx, mode);

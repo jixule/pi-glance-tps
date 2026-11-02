@@ -3,8 +3,8 @@ import type { CustomEditor, KeybindingsManager, Theme } from "@earendil-works/pi
 import type { EditorTheme, TUI } from "@earendil-works/pi-tui";
 import { defaultConfig } from "../src/config/model.js";
 import { createInitialState } from "../src/runtime/state.js";
-import { GlanceConfigPane } from "../src/settings/pane.js";
-import { GlanceEditor } from "../src/surface/editor.js";
+import { GlanceTpsConfigPane } from "../src/settings/pane.js";
+import { GlanceTpsEditor } from "../src/surface/editor.js";
 
 // Render real components with a fixed clock and no terminal, timers or config IO.
 const identity = (text: string) => text;
@@ -31,7 +31,7 @@ for (const trueColor of [true, false]) {
 			config.editor.workingSweep = mode;
 			const state = createInitialState(
 				{
-					cwd: "/projects/pi-glance",
+					cwd: "/projects/pi-glance-tps",
 					availableProviderCount: 2,
 					thinkingLevel: "high",
 					model: { id: "claude-sonnet-4", name: "Sonnet 4", provider: "anthropic", contextWindow: 200_000 },
@@ -41,7 +41,7 @@ for (const trueColor of [true, false]) {
 				config,
 			);
 			let now = 0;
-			const editor = new GlanceEditor(
+			const editor = new GlanceTpsEditor(
 				tui,
 				theme,
 				keybindings,
@@ -56,7 +56,7 @@ for (const trueColor of [true, false]) {
 			editor.focused = true;
 			editor.setWorkingStatusIndicator({ kind: "working", renderInBorder: () => "DEMO Working" } as unknown as NonNullable<Parameters<CustomEditor["setWorkingStatusIndicator"]>[0]>);
 			editor.setText("Your next prompt…");
-			const pane = new GlanceConfigPane(
+			const pane = new GlanceTpsConfigPane(
 				config,
 				{ fg: (_tone, text) => text } as Pick<Theme, "fg">,
 				() => {},

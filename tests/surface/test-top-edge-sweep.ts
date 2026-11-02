@@ -4,12 +4,12 @@ import { visibleWidth, type EditorTheme, type TUI } from "@earendil-works/pi-tui
 import type { KeybindingsManager } from "@earendil-works/pi-coding-agent";
 import { WORKING_SWEEP_COLOR_VALUES } from "../../src/config/options.js";
 import { defaultConfig } from "../../src/config/model.js";
-import { GlanceEditor } from "../../src/surface/editor.js";
+import { GlanceTpsEditor } from "../../src/surface/editor.js";
 import { renderInputSurfaceFrame } from "../../src/surface/frame.js";
 import { createTopEdgeSweep, sweepProfile } from "../../src/surface/top-edge-sweep.js";
-import { renderGlanceLine } from "../../src/surface/status-line.js";
-import { resolveBuiltInGlanceStyles } from "../../src/theme/adapter.js";
-import { GLANCE_THEMES } from "../../src/theme/themes.js";
+import { renderGlanceTpsLine } from "../../src/surface/status-line.js";
+import { resolveBuiltInGlanceTpsStyles } from "../../src/theme/adapter.js";
+import { TACH_THEMES } from "../../src/theme/themes.js";
 import type { Rgb } from "../../src/types.js";
 import { nativeActivity } from "../support/activity-harness.js";
 import { richInputSurfaceState, stripAnsi } from "../support/surface-test-harness.js";
@@ -61,8 +61,8 @@ function oklab(color: Rgb): [number, number, number] {
 }
 
 test("each theme has one chromatic Working accent distinct from both title and connector", () => {
-	for (const palette of GLANCE_THEMES) for (const mode of ["truecolor", "ansi256"] as const) {
-		const styles = resolveBuiltInGlanceStyles(palette.id, mode);
+	for (const palette of TACH_THEMES) for (const mode of ["truecolor", "ansi256"] as const) {
+		const styles = resolveBuiltInGlanceTpsStyles(palette.id, mode);
 		const titlePeak = foreground(styles.highlight!(styles.title, 1)("x"));
 		const borderPeak = foreground(styles.highlight!(styles.border, 1)("x"));
 		assert.deepEqual(titlePeak, borderPeak, `${palette.id}/${mode}: one continuous beam`);
@@ -80,12 +80,12 @@ test("each theme has one chromatic Working accent distinct from both title and c
 
 test("all sweep color choices are readable, theme-specific and isolated from static colors", () => {
 	const failures: string[] = [];
-	for (const palette of GLANCE_THEMES) for (const mode of ["truecolor", "ansi256"] as const) {
-		const original = resolveBuiltInGlanceStyles(palette.id, mode);
+	for (const palette of TACH_THEMES) for (const mode of ["truecolor", "ansi256"] as const) {
+		const original = resolveBuiltInGlanceTpsStyles(palette.id, mode);
 		const background = palette.tone === "dark" ? { r: 40, g: 40, b: 40 } : { r: 245, g: 245, b: 245 };
 		for (const color of WORKING_SWEEP_COLOR_VALUES) {
 			const label = `${palette.id}/${mode}/${color}`;
-			const styles = resolveBuiltInGlanceStyles(palette.id, mode, color);
+			const styles = resolveBuiltInGlanceTpsStyles(palette.id, mode, color);
 			const peak = foreground(styles.highlight!(styles.title, 1)("x"));
 			assert.deepEqual(peak, foreground(styles.highlight!(styles.border, 1)("x")), label);
 			const lab = oklab(peak);
@@ -110,7 +110,7 @@ test("all sweep color choices are readable, theme-specific and isolated from sta
 });
 
 test("wide unlit text bypasses per-character highlighting", () => {
-	const styles = resolveBuiltInGlanceStyles("light");
+	const styles = resolveBuiltInGlanceTpsStyles("light");
 	let calls = 0;
 	const sweep = createTopEdgeSweep(4000, 1800, { ...styles, highlight: (style, amount) => { calls++; return styles.highlight!(style, amount); } });
 	const text = "─".repeat(4000);
@@ -122,7 +122,7 @@ test("wide unlit text bypasses per-character highlighting", () => {
 });
 
 test("cached Unicode measurements remain correct after changing paths and evicting old entries", () => {
-	const styles = resolveBuiltInGlanceStyles("dark");
+	const styles = resolveBuiltInGlanceTpsStyles("dark");
 	const originals = ["项目/👩🏽‍💻/e\u0301", "\u0301中文🙂", "a\u200db", "路径".repeat(600)];
 	const paint = (text: string) => createTopEdgeSweep(80, 800, styles)(text, styles.title, 0);
 	const before = originals.map(paint);
@@ -136,8 +136,8 @@ test("cached Unicode measurements remain correct after changing paths and evicti
 });
 
 test("all themes retain readable bold cores and feathered transitions", () => {
-	for (const palette of GLANCE_THEMES) for (const mode of ["truecolor", "ansi256"] as const) {
-		const styles = resolveBuiltInGlanceStyles(palette.id, mode);
+	for (const palette of TACH_THEMES) for (const mode of ["truecolor", "ansi256"] as const) {
+		const styles = resolveBuiltInGlanceTpsStyles(palette.id, mode);
 		const value = palette.tone === "dark" ? 0 : 255;
 		const background = { r: value, g: value, b: value };
 		for (const style of [styles.border, styles.title]) {
@@ -153,7 +153,7 @@ test("all themes retain readable bold cores and feathered transitions", () => {
 });
 
 test("status, warnings and host-provided border colors are outside the highlight palette", () => {
-	const styles = resolveBuiltInGlanceStyles("high-contrast-light");
+	const styles = resolveBuiltInGlanceTpsStyles("high-contrast-light");
 	const host = (text: string) => `\x1b[38;5;208m${text}\x1b[39m`;
 	for (const style of [styles.error, styles.warn, styles.separator, styles.text, host, ...Object.values(styles.segments).map(s => s.fg)]) {
 		assert.equal(styles.highlight!(style, 1), style);
@@ -161,7 +161,7 @@ test("status, warnings and host-provided border colors are outside the highlight
 });
 
 test("a broad core crosses the left region at a steady travel speed", () => {
-	const styles = resolveBuiltInGlanceStyles("light");
+	const styles = resolveBuiltInGlanceTpsStyles("light");
 	for (const width of [20, 80, 160, 400]) {
 		const profile = sweepProfile(width, 0);
 		assert.equal(profile.center, -profile.radius);
@@ -177,7 +177,7 @@ test("a broad core crosses the left region at a steady travel speed", () => {
 });
 
 test("path and line share one beam without splitting Unicode graphemes", () => {
-	const styles = resolveBuiltInGlanceStyles("dark");
+	const styles = resolveBuiltInGlanceTpsStyles("dark");
 	const whole: number[] = [], split: number[] = [];
 	const a = "路径/👩🏽‍💻/e\u0301 ", b = "────────────────";
 	const record = (out: number[]) => createTopEdgeSweep(80, 800, { ...styles, highlight: (style, amount) => { if (amount > 0) out.push(amount); return style; } });
@@ -194,8 +194,8 @@ test("path and line share one beam without splitting Unicode graphemes", () => {
 test("every theme preserves all text, dimensions, body and bottom at every phase", () => {
 	const config = topEdgeConfig();
 	const state = richInputSurfaceState();
-	for (const palette of GLANCE_THEMES) for (const mode of ["truecolor", "ansi256"] as const) {
-		const styles = resolveBuiltInGlanceStyles(palette.id, mode);
+	for (const palette of TACH_THEMES) for (const mode of ["truecolor", "ansi256"] as const) {
+		const styles = resolveBuiltInGlanceTpsStyles(palette.id, mode);
 		for (const width of [0, 1, 2, 4, 16, 40, 80, 120, 220]) {
 			const input = { config, state, width, styles, body: { kind: "editor" as const, lines: ["中文🙂"] } };
 			const idle = renderInputSurfaceFrame(input);
@@ -212,13 +212,13 @@ test("every theme preserves all text, dimensions, body and bottom at every phase
 
 test("right-hand status and its trailing border remain byte-identical throughout the sweep", () => {
 	const config = topEdgeConfig();
-	const styles = resolveBuiltInGlanceStyles("light");
+	const styles = resolveBuiltInGlanceTpsStyles("light");
 	for (const width of [80, 120, 220]) for (const warning of [false, true]) {
 		const state = richInputSurfaceState();
 		if (warning) { state.context.percent = 95; state.git.status = "conflict"; }
 		let statusText = "";
 		const input = { config, state, width, styles, body: { kind: "editor" as const, lines: [""] },
-			status: { render: (budget: number) => statusText = renderGlanceLine(state, config, budget, 1, { styles }) } };
+			status: { render: (budget: number) => statusText = renderGlanceTpsLine(state, config, budget, 1, { styles }) } };
 		const idle = renderInputSurfaceFrame(input)[0]!;
 		assert.ok(statusText && idle.includes(statusText));
 		const suffix = idle.slice(idle.indexOf(statusText));
@@ -236,7 +236,7 @@ test("right-hand status and its trailing border remain byte-identical throughout
 test("short paths still animate their connector; unfocused frames remain static", () => {
 	const config = topEdgeConfig();
 	const state = richInputSurfaceState(); state.workspace = { name: "p", path: "/p" };
-	const styles = resolveBuiltInGlanceStyles("high-contrast-light");
+	const styles = resolveBuiltInGlanceTpsStyles("high-contrast-light");
 	const touched: string[] = [];
 	const observed = { ...styles, highlight: (style: (text: string) => string, amount: number) => amount > 0
 		? (text: string) => { touched.push(text); return style(text); }
@@ -256,7 +256,7 @@ test("live sweep retains the original status cache, Bash border and scroll label
 	let reads = 0;
 	const state = { ...sample, get usage() { reads++; return sample.usage; } };
 	let elapsed = 0;
-	const editor = new GlanceEditor(tui, theme, keys, () => state, () => config, { animationNowMs: () => elapsed, scheduleAnimationFrame: () => () => {} });
+	const editor = new GlanceTpsEditor(tui, theme, keys, () => state, () => config, { animationNowMs: () => elapsed, scheduleAnimationFrame: () => () => {} });
 	editor.focused = true; editor.setText("!pwd");
 	const bash = (text: string) => `\x1b[38;5;208m${text}\x1b[39m`;
 	editor.borderColor = bash;

@@ -1,6 +1,6 @@
 import { strict as assert } from "node:assert";
 import { RuntimeRefreshSession, type RuntimeRefreshSessionHost } from "../../src/runtime/refresh-session.js";
-import type { GlanceConfig } from "../../src/types.js";
+import type { GlanceTpsConfig } from "../../src/types.js";
 import { cloneConfig, branchSummary, compaction, createRuntimeRefreshContext as createContext, gitSnapshot, message } from "../support/runtime-refresh-harness.js";
 
 interface SessionHarness {
@@ -8,7 +8,7 @@ interface SessionHarness {
 	getRenderCount(): number;
 	getEnsureConfigCount(): number;
 	schedules: Array<boolean | undefined>;
-	setConfig(config: GlanceConfig): void;
+	setConfig(config: GlanceTpsConfig): void;
 	setNowMs(nowMs: number): void;
 	setOnRender(onRender: (() => void) | undefined): void;
 }
@@ -27,7 +27,7 @@ function messageEnd(message: ReturnType<typeof eventMessage>) {
 	return { type: "message_end" as const, message };
 }
 
-function createSessionHarness(initialConfig: GlanceConfig = cloneConfig()): SessionHarness {
+function createSessionHarness(initialConfig: GlanceTpsConfig = cloneConfig()): SessionHarness {
 	let config = initialConfig;
 	let renderCount = 0;
 	let ensureConfigCount = 0;

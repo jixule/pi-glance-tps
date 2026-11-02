@@ -3,19 +3,19 @@ import { test } from "node:test";
 import { CURSOR_MARKER, visibleWidth, type EditorTheme, type TUI } from "@earendil-works/pi-tui";
 import type { KeybindingsManager } from "@earendil-works/pi-coding-agent";
 import { defaultConfig } from "../../src/config/model.js";
-import { GlanceEditor } from "../../src/surface/editor.js";
+import { GlanceTpsEditor } from "../../src/surface/editor.js";
 import { renderInputSurfaceFrame } from "../../src/surface/frame.js";
 import { sweepProfile } from "../../src/surface/top-edge-sweep.js";
 import { createPerimeterSweep, perimeterSweepProfile } from "../../src/surface/perimeter-sweep.js";
-import { renderGlanceLine } from "../../src/surface/status-line.js";
-import { resolveBuiltInGlanceStyles, type ResolvedGlanceStyles, type TextStyler } from "../../src/theme/adapter.js";
-import { GLANCE_THEMES } from "../../src/theme/themes.js";
+import { renderGlanceTpsLine } from "../../src/surface/status-line.js";
+import { resolveBuiltInGlanceTpsStyles, type ResolvedGlanceTpsStyles, type TextStyler } from "../../src/theme/adapter.js";
+import { TACH_THEMES } from "../../src/theme/themes.js";
 import { nativeActivity } from "../support/activity-harness.js";
 import { richInputSurfaceState, stripAnsi } from "../support/surface-test-harness.js";
 
 const identity = (text: string) => text;
 const theme: EditorTheme = { borderColor: identity, selectList: { selectedPrefix: identity, selectedText: identity, description: identity, scrollInfo: identity, noMatch: identity } };
-const styles = resolveBuiltInGlanceStyles("dark");
+const styles = resolveBuiltInGlanceTpsStyles("dark");
 const keys = { matches: () => false } as unknown as KeybindingsManager;
 
 function configForLoop() {
@@ -112,7 +112,7 @@ test("wide status areas never hide the beam for a timed gap", () => {
 			? (text: string) => { if (/\S/.test(text)) lit = true; return style(text); }
 			: style };
 		const input = { config, state, width, styles: observed, body: { kind: "editor" as const, lines: [""] },
-			status: { render: (budget: number) => status = renderGlanceLine(state, config, budget, 2, { styles }) } };
+			status: { render: (budget: number) => status = renderGlanceTpsLine(state, config, budget, 2, { styles }) } };
 		for (let elapsed = 0; elapsed < 8000; elapsed += 33) {
 			lit = false;
 			const frame = renderInputSurfaceFrame({ ...input, chrome: { animation: { kind: "sweep", elapsedMs: elapsed, speed: 47 } } });
@@ -143,8 +143,8 @@ test("loop uses the same gradient in reverse on the bottom without splitting Uni
 test("all palettes preserve dimensions and text across heights, widths and phases", () => {
 	const config = configForLoop();
 	const state = richInputSurfaceState();
-	for (const palette of GLANCE_THEMES) for (const mode of ["truecolor", "ansi256"] as const) {
-		const styles = resolveBuiltInGlanceStyles(palette.id, mode);
+	for (const palette of TACH_THEMES) for (const mode of ["truecolor", "ansi256"] as const) {
+		const styles = resolveBuiltInGlanceTpsStyles(palette.id, mode);
 		for (const width of [0, 1, 2, 4, 16, 40, 80, 120, 220]) for (const rows of [2, 4, 12]) {
 			config.editor.minContentRows = Math.min(rows, 4);
 			const body = { kind: "editor" as const, lines: Array.from({ length: rows }, () => "中文👩🏽‍💻e\u0301") };
@@ -169,7 +169,7 @@ test("status, scroll labels and styled input remain byte-identical in loop mode"
 	let status = "";
 	const text = `\x1b[7m中文👩🏽‍💻\x1b[27m${CURSOR_MARKER} draft`;
 	const input = { config, state, width: 180, styles, body: { kind: "editor" as const, lines: [text] },
-		status: { render: (budget: number) => status = renderGlanceLine(state, config, budget, 2, { styles }) } };
+		status: { render: (budget: number) => status = renderGlanceTpsLine(state, config, budget, 2, { styles }) } };
 	const chrome = { topScrollIndicator: "─── ↑ 10 more ", bottomScrollIndicator: "─── ↓ 8 more " };
 	const idle = renderInputSurfaceFrame({ ...input, chrome });
 	assert.ok(status);
@@ -195,7 +195,7 @@ test("Text, disabled and unfocused frames never animate even with an elapsed tim
 
 test("animation work stays bounded to the beam on very wide top and bottom edges", () => {
 	let calls = 0;
-	const observed: ResolvedGlanceStyles = { ...styles, highlight: (style, amount) => { calls++; return styles.highlight!(style, amount); } };
+	const observed: ResolvedGlanceTpsStyles = { ...styles, highlight: (style, amount) => { calls++; return styles.highlight!(style, amount); } };
 	for (const fraction of [0, 0.25, 0.5, 0.75, 0.99]) {
 		calls = 0;
 		const period = perimeterSweepProfile(4000, 3, 0).periodMs;
@@ -213,7 +213,7 @@ test("live loop preserves cached status, Bash cues, cursor and scrolling after r
 	const sample = richInputSurfaceState();
 	let reads = 0, elapsed = 0;
 	const state = { ...sample, get usage() { reads++; return sample.usage; } };
-	const editor = new GlanceEditor({ terminal: { rows: 16 }, requestRender() {} } as unknown as TUI, theme, keys, () => state, () => config, { animationNowMs: () => elapsed, scheduleAnimationFrame: () => () => {} });
+	const editor = new GlanceTpsEditor({ terminal: { rows: 16 }, requestRender() {} } as unknown as TUI, theme, keys, () => state, () => config, { animationNowMs: () => elapsed, scheduleAnimationFrame: () => () => {} });
 	editor.focused = true;
 	for (const text of ["中文 draft", "!pwd", Array.from({ length: 30 }, (_, i) => `line ${i}`).join("\n")]) {
 		editor.setText(text);

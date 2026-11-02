@@ -2,8 +2,8 @@ import { strict as assert } from "node:assert";
 import { test } from "node:test";
 import { visibleWidth } from "@earendil-works/pi-tui";
 import { defaultConfig } from "../../src/config/model.js";
-import { renderGlanceLine } from "../../src/surface/status-line.js";
-import { GlanceEditor } from "../../src/surface/editor.js";
+import { renderGlanceTpsLine } from "../../src/surface/status-line.js";
+import { GlanceTpsEditor } from "../../src/surface/editor.js";
 import { stripAnsi } from "../support/surface-test-harness.js";
 import type { EditorTheme, TUI } from "@earendil-works/pi-tui";
 import type { KeybindingsManager } from "@earendil-works/pi-coding-agent";
@@ -13,7 +13,7 @@ import { testState } from "../support/helpers.js";
 
 function reportedState() {
 	return testState({
-		workspace: { name: "07_pi-glance", path: "/work/00_project/07_pi-glance" },
+		workspace: { name: "07_glance-tps", path: "/work/00_project/07_glance-tps" },
 		git: { ...testState().git, repo: true, branch: "main", status: "dirty", dirty: true, unstaged: 1, ahead: 1 },
 		providers: { availableCount: 2 },
 		model: { id: "team-gpt-6-astra", displayName: "team-gpt-6-astra", provider: "TEAM", thinking: "xhigh" },
@@ -45,13 +45,13 @@ test("shared density chooses full details, full model identity, then core identi
 	const config = defaultConfig();
 	config.segments = [{ id: "model", enabled: true }];
 	const state = reportedState();
-	const render = (widthMode: "full" | "compact" | "minimal") => stripControls(renderGlanceLine(state, config, 180, 2, { widthMode }));
+	const render = (widthMode: "full" | "compact" | "minimal") => stripControls(renderGlanceTpsLine(state, config, 180, 2, { widthMode }));
 	assert.equal(render("full"), "󰚩 TEAM/team-gpt-6-astra xhigh");
 	assert.equal(render("compact"), "󰚩 team-gpt-6-astra");
 	assert.equal(render("minimal"), "󰚩 gpt-6-astra");
 	assert.equal(render("full"), "󰚩 TEAM/team-gpt-6-astra xhigh");
 	for (const [width, expected] of [[96, "󰚩 TEAM/team-gpt-6-astra xhigh"], [95, "󰚩 team-gpt-6-astra"], [64, "󰚩 team-gpt-6-astra"], [63, "󰚩 gpt-6-astra"]] as const) {
-		assert.equal(stripControls(renderGlanceLine(state, config, width)), expected, `${width} status columns`);
+		assert.equal(stripControls(renderGlanceTpsLine(state, config, width)), expected, `${width} status columns`);
 	}
 	state.model.displayName = "GPT 5.5";
 	assert.equal(render("compact"), "󰚩 GPT 5.5");
@@ -76,7 +76,7 @@ test("model fitting follows provider, thinking, and matching namespace tiers bef
 	const config = defaultConfig();
 	config.segments = [{ id: "model", enabled: true }];
 	const state = reportedState();
-	const render = (width: number) => stripControls(renderGlanceLine(state, config, width, 2, { widthMode: "full" }));
+	const render = (width: number) => stripControls(renderGlanceTpsLine(state, config, width, 2, { widthMode: "full" }));
 	assert.equal(render(60), "󰚩 TEAM/team-gpt-6-astra xhigh");
 	assert.equal(render(24), "󰚩 team-gpt-6-astra xhigh");
 	assert.equal(render(20), "󰚩 team-gpt-6-astra");
@@ -88,9 +88,9 @@ test("explicit custom model aliases are not namespace-shortened", () => {
 	const config = defaultConfig();
 	config.segments = [{ id: "model", enabled: true }];
 	config.model.customNames = { "team-gpt": "team-gpt-6-astra" };
-	const text = stripControls(renderGlanceLine(reportedState(), config, 14, 2, { widthMode: "full" }));
+	const text = stripControls(renderGlanceTpsLine(reportedState(), config, 14, 2, { widthMode: "full" }));
 	assert.equal(text, "󰚩 team-g…astra", "an explicit alias is not a provider namespace even when its spelling matches");
-	assert.equal(stripControls(renderGlanceLine(reportedState(), config, 180, 2, { widthMode: "minimal" })), "󰚩 team-gpt-6-astra", "minimal density also preserves custom aliases");
+	assert.equal(stripControls(renderGlanceTpsLine(reportedState(), config, 180, 2, { widthMode: "minimal" })), "󰚩 team-gpt-6-astra", "minimal density also preserves custom aliases");
 });
 
 test("always labels remain attached to the shortened name; never labels do not reappear", () => {
@@ -98,14 +98,14 @@ test("always labels remain attached to the shortened name; never labels do not r
 	config.segments = [{ id: "model", enabled: true }];
 	config.display.showProvider = "always";
 	config.model.showThinking = "always";
-	const text = stripControls(renderGlanceLine(reportedState(), config, 25));
+	const text = stripControls(renderGlanceTpsLine(reportedState(), config, 25));
 	assert.equal(text, "󰚩 TEAM/gpt-6-astra xhigh");
 	assert.ok(visibleWidth(text) <= 25);
-	assert.equal(stripControls(renderGlanceLine(reportedState(), config, 180, 2, { widthMode: "compact" })), "󰚩 TEAM/team-gpt-6-astra xhigh");
-	assert.equal(stripControls(renderGlanceLine(reportedState(), config, 180, 2, { widthMode: "minimal" })), "󰚩 TEAM/gpt-6-astra xhigh");
+	assert.equal(stripControls(renderGlanceTpsLine(reportedState(), config, 180, 2, { widthMode: "compact" })), "󰚩 TEAM/team-gpt-6-astra xhigh");
+	assert.equal(stripControls(renderGlanceTpsLine(reportedState(), config, 180, 2, { widthMode: "minimal" })), "󰚩 TEAM/gpt-6-astra xhigh");
 	config.display.showProvider = "never";
 	config.model.showThinking = "never";
-	assert.equal(stripControls(renderGlanceLine(reportedState(), config, 120)), "󰚩 team-gpt-6-astra");
+	assert.equal(stripControls(renderGlanceTpsLine(reportedState(), config, 120)), "󰚩 team-gpt-6-astra");
 });
 
 test("reordered segments retain user priority and extremely narrow budgets stay safe", () => {
@@ -113,13 +113,13 @@ test("reordered segments retain user priority and extremely narrow budgets stay 
 	config.segments = [{ id: "model", enabled: true }, { id: "cost", enabled: true }];
 	const state = reportedState();
 	const before = structuredClone({ state, config });
-	assert.equal(stripControls(renderGlanceLine(state, config, 20)), "󰚩 gpt-6-astra", "drop later Cost rather than shortening the earlier minimal Model label to make room for it");
+	assert.equal(stripControls(renderGlanceTpsLine(state, config, 20)), "󰚩 gpt-6-astra", "drop later Cost rather than shortening the earlier minimal Model label to make room for it");
 	for (const width of [0, 1, 2, 3, 6, 9, 15, 24, 80]) {
-		assert.ok(visibleWidth(renderGlanceLine(state, config, width)) <= width);
+		assert.ok(visibleWidth(renderGlanceTpsLine(state, config, width)) <= width);
 	}
 	assert.deepEqual({ state, config }, before, "fitting must not mutate saved names or config");
 	config.segments[0]!.enabled = false;
-	assert.equal(stripControls(renderGlanceLine(state, config, 80)), "󰈸 $414.1");
+	assert.equal(stripControls(renderGlanceTpsLine(state, config, 80)), "󰈸 $414.1");
 });
 
 test("namespace removal is case-insensitive, leading-only, and provider-specific", () => {
@@ -139,7 +139,7 @@ test("namespace removal is case-insensitive, leading-only, and provider-specific
 	] as const) {
 		const state = reportedState();
 		state.model = { id: name, displayName: name, provider, thinking: "xhigh" };
-		assert.equal(stripControls(renderGlanceLine(state, config, 14)), `󰚩 ${expected}`, `${provider}/${name}`);
+		assert.equal(stripControls(renderGlanceTpsLine(state, config, 14)), `󰚩 ${expected}`, `${provider}/${name}`);
 	}
 });
 
@@ -147,9 +147,9 @@ test("ellipsis is only an emergency fallback after the fourth tier cannot fit", 
 	const config = defaultConfig();
 	config.segments = [{ id: "model", enabled: true }];
 	for (const width of [13, 14, 15, 16, 17]) {
-		assert.equal(stripControls(renderGlanceLine(reportedState(), config, width)), "󰚩 gpt-6-astra");
+		assert.equal(stripControls(renderGlanceTpsLine(reportedState(), config, width)), "󰚩 gpt-6-astra");
 	}
-	const raw = renderGlanceLine(reportedState(), config, 12);
+	const raw = renderGlanceTpsLine(reportedState(), config, 12);
 	assert.ok(stripControls(raw).includes("…"));
 	assert.ok(visibleWidth(raw) <= 12);
 });
@@ -162,7 +162,7 @@ test("Unicode names keep whole graphemes and both ends in RGB and ANSI256", () =
 		config.icons = icons;
 		config.segments = [{ id: "model", enabled: true }];
 		for (let width = 12; width <= 28; width++) {
-			const raw = renderGlanceLine(state, config, width, 2, { trueColor });
+			const raw = renderGlanceTpsLine(state, config, width, 2, { trueColor });
 			const text = stripControls(raw);
 			assert.ok(visibleWidth(raw) <= width, `${width}: ${text}`);
 			assert.ok(text.includes("团队") && text.endsWith("尾部"), text);
@@ -177,7 +177,7 @@ test("live editor and settings preview agree when resizing down and back up", ()
 	const config = defaultConfig(), state = reportedState();
 	const identity = (text: string) => text;
 	const theme: EditorTheme = { borderColor: identity, selectList: { selectedPrefix: identity, selectedText: identity, description: identity, scrollInfo: identity, noMatch: identity } };
-	const editor = new GlanceEditor(
+	const editor = new GlanceTpsEditor(
 		{ terminal: { rows: 24 }, requestRender() {} } as unknown as TUI,
 		theme, { matches: () => false } as unknown as KeybindingsManager, () => state, () => config,
 	);

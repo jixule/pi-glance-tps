@@ -1,5 +1,5 @@
 import { createRuntimeTestContext } from "../support/runtime-harness.js";
-import piGlance from "../../index.js";
+import piGlanceTps from "../../index.js";
 import { strict as assert } from "node:assert";
 import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
@@ -37,13 +37,13 @@ function getHandler(pi: CapturedPi, event: string): CapturedHandler {
 
 async function main(): Promise<void> {
 	const previousAgentDir = process.env.PI_CODING_AGENT_DIR;
-	const agentDir = await mkdtemp(join(tmpdir(), "pi-glance-session-start-"));
+	const agentDir = await mkdtemp(join(tmpdir(), "pi-glance-tps-session-start-"));
 	process.env.PI_CODING_AGENT_DIR = agentDir;
 
 	try {
 
 		const enabledPi = createPi();
-		piGlance(enabledPi.api);
+		piGlanceTps(enabledPi.api);
 		assert.ok(enabledPi.handlers.has("thinking_level_select"), "entry point should register Pi /thinking selection notifications");
 		assert.ok(enabledPi.handlers.has("ui_prompt_start"), "entry point should register Pi ui_prompt_start notifications");
 		assert.ok(enabledPi.handlers.has("ui_prompt_end"), "entry point should register Pi ui_prompt_end notifications");
@@ -58,18 +58,18 @@ async function main(): Promise<void> {
 
 		for (const mode of ["rpc", "json", "print"] as const) {
 			const nonTuiPi = createPi();
-			piGlance(nonTuiPi.api);
+			piGlanceTps(nonTuiPi.api);
 			const { ctx, surfaceCalls: nonTuiCalls } = createRuntimeTestContext({ mode, trusted: false, persistent: false });
 			const nonTuiResult = getHandler(nonTuiPi, "session_start")({ type: "session_start" }, ctx);
 			assert.equal(isPromiseLike(nonTuiResult), false, `${mode} session_start should stay synchronous for default enabled config`);
 			assert.deepEqual(nonTuiCalls, [], `${mode} session_start should not install or clear TUI footer/editor`);
 		}
 
-		await mkdir(join(agentDir, "pi-glance"), { recursive: true });
-		await writeFile(join(agentDir, "pi-glance", "config.json"), `${JSON.stringify({ enabled: false })}\n`, "utf8");
+		await mkdir(join(agentDir, "pi-glance-tps"), { recursive: true });
+		await writeFile(join(agentDir, "pi-glance-tps", "config.json"), `${JSON.stringify({ enabled: false })}\n`, "utf8");
 
 		const disabledPi = createPi();
-		piGlance(disabledPi.api);
+		piGlanceTps(disabledPi.api);
 		const { ctx: disabledContext, surfaceCalls: disabledCalls } = createRuntimeTestContext({ trusted: false, persistent: false });
 		const disabledResult = getHandler(disabledPi, "session_start")({ type: "session_start" }, disabledContext);
 

@@ -1,7 +1,7 @@
 import { strict as assert } from "node:assert";
 import { defaultConfig } from "../../src/config/model.js";
 import { stripControls } from "../../src/surface/format.js";
-import { renderGlanceLine } from "../../src/surface/status-line.js";
+import { renderGlanceTpsLine } from "../../src/surface/status-line.js";
 import { testState } from "../support/helpers.js";
 import type { GitSnapshot } from "../../src/types.js";
 
@@ -34,7 +34,7 @@ function gitLine(git: Partial<GitSnapshot>, mutateConfig?: (config: ReturnType<t
 	config.icons = "plain";
 	config.segments = config.segments.map((segment) => ({ ...segment, enabled: segment.id === "git" }));
 	mutateConfig?.(config);
-	return stripControls(renderGlanceLine(stateWithGit(git), config, width));
+	return stripControls(renderGlanceTpsLine(stateWithGit(git), config, width));
 }
 
 assert.equal(gitLine({ status: "clean" }), "git main", "clean branch stays quiet");

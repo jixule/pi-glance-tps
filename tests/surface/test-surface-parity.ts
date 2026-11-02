@@ -3,10 +3,10 @@ import { test } from "node:test";
 import { visibleWidth, type AutocompleteProvider, type EditorTheme, type TUI } from "@earendil-works/pi-tui";
 import type { KeybindingsManager } from "@earendil-works/pi-coding-agent";
 import { defaultConfig } from "../../src/config/model.js";
-import { GlanceEditor, type GlanceEditorOptions } from "../../src/surface/editor.js";
+import { GlanceTpsEditor, type GlanceTpsEditorOptions } from "../../src/surface/editor.js";
 import { renderInputSurface } from "../../src/surface/renderer.js";
-import { resolveBuiltInGlanceStyles, type ResolvedGlanceStyles } from "../../src/theme/adapter.js";
-import type { GlanceConfig, GlanceState } from "../../src/types.js";
+import { resolveBuiltInGlanceTpsStyles, type ResolvedGlanceTpsStyles } from "../../src/theme/adapter.js";
+import type { GlanceTpsConfig, GlanceTpsState } from "../../src/types.js";
 import { testState } from "../support/helpers.js";
 import { richInputSurfaceState, onlySegments, stripAnsi } from "../support/surface-test-harness.js";
 
@@ -15,10 +15,10 @@ const theme: EditorTheme = { borderColor: identity, selectList: {
 	selectedPrefix: identity, selectedText: identity, description: identity, scrollInfo: identity, noMatch: identity,
 } };
 
-function editorFor(config: GlanceConfig, state: GlanceState = richInputSurfaceState(), options?: GlanceEditorOptions,
-	bindings: Record<string, string[]> = {}, rows = 40): GlanceEditor {
+function editorFor(config: GlanceTpsConfig, state: GlanceTpsState = richInputSurfaceState(), options?: GlanceTpsEditorOptions,
+	bindings: Record<string, string[]> = {}, rows = 40): GlanceTpsEditor {
 	const keys = { matches: (data: string, action: string) => bindings[action]?.includes(data) ?? false } as unknown as KeybindingsManager;
-	const editor = new GlanceEditor({ terminal: { rows }, requestRender() {} } as unknown as TUI,
+	const editor = new GlanceTpsEditor({ terminal: { rows }, requestRender() {} } as unknown as TUI,
 		theme, keys, () => state, () => config, options);
 	editor.focused = true;
 	return editor;
@@ -54,16 +54,16 @@ test("live and preview use current palette, color capability and explicit overri
 	config.theme = { light: "one-light", dark: "tokyo-night" }; onlySegments(config, ["model"]);
 	const state = testState();
 	let tone: "light" | "dark" = "light", trueColor = true;
-	let override: ResolvedGlanceStyles | undefined;
+	let override: ResolvedGlanceTpsStyles | undefined;
 	const context = { getAmbientTone: () => tone, getTrueColor: () => trueColor, get styles() { return override; } };
 	const editor = editorFor(config, state, { renderStyleContext: context }); editor.setText("keep my draft");
 	for (const [nextTone, rgb, injected] of [
 		["light", true, undefined], ["dark", true, undefined], ["dark", false, undefined],
-		["light", true, resolveBuiltInGlanceStyles("nord")],
+		["light", true, resolveBuiltInGlanceTpsStyles("nord")],
 		["light", true, undefined],
 	] as const) {
 		tone = nextTone; trueColor = rgb; override = injected;
-		const expected = injected ?? resolveBuiltInGlanceStyles(tone === "dark" ? "tokyo-night" : "one-light", rgb ? "truecolor" : "ansi256");
+		const expected = injected ?? resolveBuiltInGlanceTpsStyles(tone === "dark" ? "tokyo-night" : "one-light", rgb ? "truecolor" : "ansi256");
 		const live = editor.render(120), preview = renderInputSurface(state, config, 120, {
 			...context, contentLines: ["short", "long prompt ".repeat(30)], focused: true,
 		});
@@ -82,7 +82,7 @@ test("unfocused chrome dims without changing workspace, status facts or prompt t
 	const editor = editorFor(config, testState()); editor.setText("keep my draft");
 	const focused = editor.render(120);
 	editor.focused = false;
-	const unfocused = editor.render(120), styles = resolveBuiltInGlanceStyles("light");
+	const unfocused = editor.render(120), styles = resolveBuiltInGlanceTpsStyles("light");
 	assert.equal(stripAnsi(unfocused[0]!), stripAnsi(focused[0]!));
 	assert.ok(unfocused[0]!.startsWith(styles.dim("╭")));
 	assert.ok(unfocused[0]!.includes(styles.dim("ai GPT 5.5")));

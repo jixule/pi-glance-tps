@@ -2,7 +2,7 @@ import { stripTerminalSequences, visibleWidth } from "@earendil-works/pi-tui";
 import { DRAFT_LABELS } from "../theme/palette.js";
 import { shortcutLabel } from "../input/shortcut.js";
 import { truncateStyledText } from "./text.js";
-import { renderGlanceLine } from "./status-line.js";
+import { renderGlanceTpsLine } from "./status-line.js";
 import { createTopEdgeSweep } from "./top-edge-sweep.js";
 import { createPerimeterSweep, type PerimeterSweep } from "./perimeter-sweep.js";
 import {
@@ -17,8 +17,8 @@ import {
 	SURFACE_AUTOCOMPLETE_INDENT,
 	SURFACE_CONTENT_PADDING_X,
 } from "./layout.js";
-import type { ResolvedGlanceStyles, TextStyler } from "../theme/adapter.js";
-import type { ActivityAnimation, ActivityStatus, GlanceConfig, GlanceState } from "../types.js";
+import type { ResolvedGlanceTpsStyles, TextStyler } from "../theme/adapter.js";
+import type { ActivityAnimation, ActivityStatus, GlanceTpsConfig, GlanceTpsState } from "../types.js";
 
 export type InputSurfaceChromeFocus = "focused" | "unfocused";
 
@@ -44,14 +44,14 @@ export interface InputSurfaceFrameChrome {
 }
 
 export interface InputSurfaceFrameStatus {
-	render?: (budget: number, styles: ResolvedGlanceStyles) => string;
+	render?: (budget: number, styles: ResolvedGlanceTpsStyles) => string;
 }
 
 export interface InputSurfaceFrameInput {
-	state: GlanceState;
-	config: GlanceConfig;
+	state: GlanceTpsState;
+	config: GlanceTpsConfig;
 	width: number;
-	styles: ResolvedGlanceStyles;
+	styles: ResolvedGlanceTpsStyles;
 	body: InputSurfaceFrameBody;
 	chrome?: InputSurfaceFrameChrome;
 	status?: InputSurfaceFrameStatus;
@@ -68,7 +68,7 @@ function stripControlsPreservingSpaces(text: string): string {
 		.replace(/[\r\n\t]/g, " ");
 }
 
-function minContentRows(config: GlanceConfig): number {
+function minContentRows(config: GlanceTpsConfig): number {
 	return Math.max(2, Math.min(4, config.editor.minContentRows));
 }
 
@@ -91,7 +91,7 @@ function blinkingBorder(input: InputSurfaceFrameInput, top: boolean): TextStyler
 function resolveStatus(input: InputSurfaceFrameInput, budget: number): string {
 	const status = input.status?.render
 		? input.status.render(budget, input.styles)
-		: renderGlanceLine(input.state, input.config, budget, input.state.providers.availableCount, { styles: input.styles });
+		: renderGlanceTpsLine(input.state, input.config, budget, input.state.providers.availableCount, { styles: input.styles });
 	if (!status || !shouldDimChrome(input)) return status;
 	return input.styles.dim(stripControlsPreservingSpaces(status));
 }

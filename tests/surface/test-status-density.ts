@@ -3,15 +3,15 @@ import { test } from "node:test";
 import { visibleWidth } from "@earendil-works/pi-tui";
 import { defaultConfig } from "../../src/config/model.js";
 import { stripControls } from "../../src/surface/format.js";
-import { renderGlanceLine } from "../../src/surface/status-line.js";
+import { renderGlanceTpsLine } from "../../src/surface/status-line.js";
 import { renderInputSurface } from "../../src/surface/renderer.js";
-import { resolveBuiltInGlanceStyles } from "../../src/theme/adapter.js";
+import { resolveBuiltInGlanceTpsStyles } from "../../src/theme/adapter.js";
 import type { WidthMode } from "../../src/types.js";
 import { testState } from "../support/helpers.js";
 
 function densityState() {
 	return testState({
-		workspace: { name: "07_pi-glance", path: "/work/00_project/07_pi-glance" },
+		workspace: { name: "07_pi-glance-tps", path: "/work/00_project/07_pi-glance-tps" },
 		git: { ...testState().git, repo: true, branch: "main", status: "dirty", dirty: true, unstaged: 1, ahead: 1 },
 		providers: { availableCount: 2 },
 		model: { id: "team-gpt-6-astra", displayName: "team-gpt-6-astra", provider: "TEAM", thinking: "xhigh" },
@@ -21,7 +21,7 @@ function densityState() {
 }
 
 const expected: Record<WidthMode, string[]> = {
-	full: ["git main * ↑1", "$414.1", "spd ? tok/s", "ctx 38% 258k/680k", "tok ↑1.0M ↓1.7M 96%", "ai TEAM/team-gpt-6-astra xhigh"],
+	full: ["git main * ↑1", "$414.1", "spd ? t/s", "ctx 38% 258k/680k", "tok ↑1.0M ↓1.7M 96%", "ai TEAM/team-gpt-6-astra xhigh"],
 	compact: ["git main *", "$414.1", "spd ?/s", "ctx 38%", "tok 96%", "ai team-gpt-6-astra"],
 	minimal: ["git main *", "$414.1", "spd ?/s", "ctx 38%", "tok 96%", "ai gpt-6-astra"],
 };
@@ -31,7 +31,7 @@ test("all six segments share detail, primary-fact and identity density semantics
 	config.icons = "plain";
 	for (const widthMode of ["full", "compact", "minimal"] as const) {
 		assert.equal(
-			stripControls(renderGlanceLine(densityState(), config, 220, 2, { widthMode })),
+			stripControls(renderGlanceTpsLine(densityState(), config, 220, 2, { widthMode })),
 			expected[widthMode].join(" · "),
 			widthMode,
 		);
@@ -44,7 +44,7 @@ test("every segment crosses the same actual status-width boundaries", () => {
 	for (const [width, mode] of [[96, "full"], [95, "compact"], [64, "compact"], [63, "minimal"]] as const) {
 		for (const [index, segment] of config.segments.filter(s => s.id !== "extensions").entries()) {
 			const single = { ...config, segments: [segment] };
-			assert.equal(stripControls(renderGlanceLine(densityState(), single, width)), expected[mode][index], `${segment.id} at ${width} columns`);
+			assert.equal(stripControls(renderGlanceTpsLine(densityState(), single, width)), expected[mode][index], `${segment.id} at ${width} columns`);
 		}
 	}
 });
@@ -65,7 +65,7 @@ test("the reported half-screen frame folds Git and Model details alongside Conte
 	}
 });
 
-test("measured full density uses tok/s; compact densities preserve provisional markers", () => {
+test("measured full density uses t/s; compact densities preserve provisional markers", () => {
 	const config = defaultConfig();
 	config.icons = "plain";
 	config.segments = [{ id: "throughput", enabled: true }];
@@ -74,8 +74,8 @@ test("measured full density uses tok/s; compact densities preserve provisional m
 	for (const provisional of [false, true]) {
 		state.throughput = { currentRun: provisional ? measurement : null, lastRun: provisional ? null : measurement };
 		const marker = provisional ? "~" : "";
-		for (const [width, label] of [[96, `${marker}30 tok/s`], [95, `${marker}30/s`], [64, `${marker}30/s`], [63, `${marker}30/s`]] as const) {
-			assert.equal(stripControls(renderGlanceLine(state, config, width)), `spd ${label}`);
+		for (const [width, label] of [[96, `${marker}30 t/s`], [95, `${marker}30/s`], [64, `${marker}30/s`], [63, `${marker}30/s`]] as const) {
+			assert.equal(stripControls(renderGlanceTpsLine(state, config, width)), `spd ${label}`);
 		}
 	}
 });
@@ -91,9 +91,9 @@ test("density preserves alerts, explicit detail choices and model always labels"
 	state.git.status = "conflict";
 	state.git.sha = "abcdef1";
 	state.context.percent = 95;
-	const styles = resolveBuiltInGlanceStyles("light");
+	const styles = resolveBuiltInGlanceTpsStyles("light");
 	for (const widthMode of ["full", "compact", "minimal"] as const) {
-		const raw = renderGlanceLine(state, config, 240, 2, { widthMode, styles });
+		const raw = renderGlanceTpsLine(state, config, 240, 2, { widthMode, styles });
 		const text = stripControls(raw);
 		assert.ok(text.includes("git main abcdef1 !"), text);
 		assert.ok(text.includes("$414.1"), text);

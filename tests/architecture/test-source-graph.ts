@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { dependencyPath, parseSource, readProductionSources, runtimeCycles } from "../support/source-graph.js";
 
 test("source discovery recurses through production folders but not test fixtures", async () => {
-	const root = await mkdtemp(join(tmpdir(), "pi-glance-source-graph-"));
+	const root = await mkdtemp(join(tmpdir(), "pi-glance-tps-source-graph-"));
 	try {
 		await mkdir(join(root, "src", "config"), { recursive: true });
 		await mkdir(join(root, "tests", "fixtures"), { recursive: true });

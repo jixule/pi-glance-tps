@@ -1,8 +1,8 @@
 import { emptyGitSnapshot } from "../../src/runtime/git-snapshot.js";
-import type { GlanceState } from "../../src/types.js";
+import type { GlanceTpsState } from "../../src/types.js";
 
-export function testState(overrides: Partial<GlanceState> = {}): GlanceState {
-	const overrideRecord = overrides as Partial<GlanceState> & Record<string, unknown>;
+export function testState(overrides: Partial<GlanceTpsState> = {}): GlanceTpsState {
+	const overrideRecord = overrides as Partial<GlanceTpsState> & Record<string, unknown>;
 	const base = {
 		workspace: { name: "repo", path: "/repo" },
 		git: emptyGitSnapshot(),
@@ -11,8 +11,9 @@ export function testState(overrides: Partial<GlanceState> = {}): GlanceState {
 		context: { tokens: 46_800, window: 200_000, percent: 23.4 },
 		usage: { input: 100, output: 50, cacheRead: 0, cacheWrite: 0, cost: 0 },
 		throughput: { lastRun: null, currentRun: null },
+		liveSpeed: null,
 		version: 0,
-	} as GlanceState & Record<string, unknown>;
+	} as GlanceTpsState & Record<string, unknown>;
 	return {
 		...base,
 		...overrides,
@@ -23,5 +24,5 @@ export function testState(overrides: Partial<GlanceState> = {}): GlanceState {
 		context: { ...base.context, ...overrides.context },
 		usage: { ...base.usage, ...overrides.usage },
 		throughput: { ...(base.throughput as object), ...((overrideRecord.throughput as object | undefined) ?? {}) },
-	} as GlanceState;
+	} as GlanceTpsState;
 }

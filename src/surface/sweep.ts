@@ -1,6 +1,6 @@
 import { SUMMARY_SPEED, WORKING_SPEED } from "../config/schema.js";
 import { visibleWidth } from "@earendil-works/pi-tui";
-import type { ResolvedGlanceStyles, TextStyler } from "../theme/adapter.js";
+import type { ResolvedGlanceTpsStyles, TextStyler } from "../theme/adapter.js";
 
 const graphemes = new Intl.Segmenter(undefined, { granularity: "grapheme" });
 const SINGLE_CELL_TEXT = /^[\x20-\x7e─]*$/;
@@ -66,7 +66,7 @@ export interface SweepProfile {
 }
 
 /** Shades plain text in path coordinates, keeping unlit runs and graphemes intact. */
-export function createTextSweep({ center, radius, length: loopLength }: SweepProfile, styles: ResolvedGlanceStyles) {
+export function createTextSweep({ center, radius, length: loopLength }: SweepProfile, styles: ResolvedGlanceTpsStyles) {
 	const centers = loopLength ? [center - loopLength, center, center + loopLength] : [center];
 	return (text: string, style: TextStyler, column: number, direction: 1 | -1 = 1): string => {
 		if (!styles.highlight || !Number.isFinite(column)) return style(text);

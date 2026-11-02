@@ -3,12 +3,12 @@ import { readFileSync } from "node:fs";
 import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { CONFIG_VERSION, configToText, defaultConfig, normalizeConfig } from "./model.js";
-import type { GlanceConfig } from "../types.js";
+import type { GlanceTpsConfig } from "../types.js";
 
 export type ConfigLoadStatus = "loaded" | "missing" | "invalid" | "unreadable" | "future";
 
 export interface ConfigLoadResult {
-	config: GlanceConfig;
+	config: GlanceTpsConfig;
 	status: ConfigLoadStatus;
 	writable: boolean;
 	diagnostic?: string;
@@ -33,7 +33,7 @@ export function createConfigStore(configPath: string) {
 				config: defaultConfig(),
 				status: "invalid",
 				writable: false,
-				diagnostic: `pi-glance configuration is invalid; using defaults and blocking saves until ${configPath} is fixed or removed (${errorMessage(error)})`,
+				diagnostic: `pi-glance-tps configuration is invalid; using defaults and blocking saves until ${configPath} is fixed or removed (${errorMessage(error)})`,
 			};
 		}
 
@@ -42,7 +42,7 @@ export function createConfigStore(configPath: string) {
 				config: defaultConfig(),
 				status: "invalid",
 				writable: false,
-				diagnostic: `pi-glance configuration must be a JSON object; using defaults and blocking saves until ${configPath} is fixed or removed`,
+				diagnostic: `pi-glance-tps configuration must be a JSON object; using defaults and blocking saves until ${configPath} is fixed or removed`,
 			};
 		}
 
@@ -52,7 +52,7 @@ export function createConfigStore(configPath: string) {
 				config: normalizeConfig(raw),
 				status: "future",
 				writable: false,
-				diagnostic: `pi-glance configuration version ${rawVersion} is newer than supported version ${CONFIG_VERSION}; using known fields without overwriting the file`,
+				diagnostic: `pi-glance-tps configuration version ${rawVersion} is newer than supported version ${CONFIG_VERSION}; using known fields without overwriting the file`,
 			};
 		}
 
@@ -65,7 +65,7 @@ export function createConfigStore(configPath: string) {
 			config: defaultConfig(),
 			status: "unreadable",
 			writable: false,
-			diagnostic: `pi-glance configuration could not be read; using defaults and blocking saves until ${configPath} is accessible (${errorMessage(error)})`,
+			diagnostic: `pi-glance-tps configuration could not be read; using defaults and blocking saves until ${configPath} is accessible (${errorMessage(error)})`,
 		};
 	}
 
@@ -85,7 +85,7 @@ export function createConfigStore(configPath: string) {
 		}
 	}
 
-	async function saveConfig(config: GlanceConfig): Promise<void> {
+	async function saveConfig(config: GlanceTpsConfig): Promise<void> {
 		const configDir = dirname(configPath);
 		const temporaryPath = join(configDir, `.config.json.${process.pid}.${randomUUID()}.tmp`);
 		await mkdir(configDir, { recursive: true });

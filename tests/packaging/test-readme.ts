@@ -1,6 +1,6 @@
 import { strict as assert } from "node:assert";
 import { access, readFile } from "node:fs/promises";
-import { GLANCE_THEMES } from "../../src/theme/themes.js";
+import { TACH_THEMES } from "../../src/theme/themes.js";
 
 const readme = await readFile("README.md", "utf8");
 const chineseReadme = await readFile("README.zh-CN.md", "utf8");
@@ -14,9 +14,9 @@ const manifest = JSON.parse(await readFile("package.json", "utf8")) as {
 	};
 };
 
-const INPUT_SURFACE_IMAGE = "https://raw.githubusercontent.com/LinYS77/pi-glance/main/assets/input-surface.png";
-const SETTINGS_IMAGE = "https://raw.githubusercontent.com/LinYS77/pi-glance/main/assets/settings.png";
-const THEMES_GIF = "https://raw.githubusercontent.com/LinYS77/pi-glance/main/assets/themes.gif";
+const INPUT_SURFACE_IMAGE = "https://raw.githubusercontent.com/LinYS77/pi-glance-tps/main/assets/input-surface.png";
+const SETTINGS_IMAGE = "https://raw.githubusercontent.com/LinYS77/pi-glance-tps/main/assets/settings.png";
+const THEMES_GIF = "https://raw.githubusercontent.com/LinYS77/pi-glance-tps/main/assets/themes.gif";
 
 function assertIncludes(document: string, fragment: string, message: string): void {
 	assert.ok(document.includes(fragment), message);
@@ -34,10 +34,10 @@ for (const document of [readme, chineseReadme]) {
 	assert.ok(!document.includes("docs/adr"), "public READMEs must not link to ignored local ADRs");
 	assertIncludes(document, "CONTEXT.md", "both READMEs should link to the maintained design reference");
 
-	assertIncludes(document, "pi -e npm:pi-glance", "both READMEs should offer a one-session trial");
-	assertIncludes(document, "pi install npm:pi-glance", "both READMEs should document installation");
-	assertIncludes(document, "pi update npm:pi-glance", "both READMEs should document updates");
-	assertIncludes(document, "/glance", "both READMEs should name the only settings command");
+	assertIncludes(document, "pi -e npm:pi-glance-tps", "both READMEs should offer a one-session trial");
+	assertIncludes(document, "pi install npm:pi-glance-tps", "both READMEs should document installation");
+	assertIncludes(document, "pi update npm:pi-glance-tps", "both READMEs should document updates");
+	assertIncludes(document, "/glance-tps", "both READMEs should name the only settings command");
 	assertIncludes(document, INPUT_SURFACE_IMAGE, "both READMEs should show the input surface");
 	assertIncludes(document, SETTINGS_IMAGE, "both READMEs should show the settings pane");
 	assertIncludes(document, THEMES_GIF, "both READMEs should embed the animated theme preview");
@@ -52,10 +52,10 @@ assert.match(readme, /select `Plain`.*Appearance.*Icons/, "the English README sh
 assert.match(chineseReadme, /普通字体.*Appearance.*Icons.*`Plain`/, "the Chinese README should explain how regular-font users can switch to plain icons");
 
 
-assert.equal(GLANCE_THEMES.length, 22, "the curated theme collection should remain complete");
+assert.equal(TACH_THEMES.length, 22, "the curated theme collection should remain complete");
 assertIncludes(readme, "22 palettes", "the English README should state the palette count");
 assertIncludes(chineseReadme, "22 套配色", "the Chinese README should state the palette count");
-assertIncludes(readme, "Git · Cost · Output throughput · Context · Tokens · Extensions · Model", "the English README should name the adaptive facts");
+assertIncludes(readme, "Git · Cost · Live speed · Context · Tokens · Extensions · Model", "the English README should name the adaptive facts");
 assertIncludes(chineseReadme, "Git · 费用 · 输出吞吐率 · 上下文 · Tokens · 扩展状态 · 模型", "the Chinese README should name the adaptive facts");
 assert.match(readme, /no telemetry/i, "the English README should state the privacy boundary");
 assertIncludes(chineseReadme, "不收集遥测数据", "the Chinese README should state the privacy boundary");

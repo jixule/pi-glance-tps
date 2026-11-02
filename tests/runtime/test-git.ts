@@ -205,7 +205,7 @@ const testConfig: GitConfig = {
 };
 
 async function assertNonGitSnapshot(): Promise<void> {
-	const dir = await mkdtemp(join(tmpdir(), "pi-glance-git-"));
+	const dir = await mkdtemp(join(tmpdir(), "pi-glance-tps-git-"));
 	try {
 		const snapshot = await collectGitSnapshot(dir, testConfig);
 		assert.equal(snapshot.repo, false, "non-git: repo");

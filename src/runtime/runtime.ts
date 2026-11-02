@@ -10,6 +10,8 @@ import type {
 	ExtensionContext,
 	ExtensionEvent,
 	MessageEndEvent,
+	MessageStartEvent,
+	MessageUpdateEvent,
 	ReadonlyFooterDataProvider,
 	SessionCompactEvent,
 	SessionShutdownEvent,
@@ -22,15 +24,16 @@ import type {
 	UIPromptStartEvent,
 } from "@earendil-works/pi-coding-agent";
 import type { ConfigLoadResult } from "../config/store.js";
-import { GlanceEditor } from "../surface/editor.js";
-import { GlanceFooter } from "../surface/footer.js";
+import { GlanceTpsEditor } from "../surface/editor.js";
+import { GlanceTpsFooter } from "../surface/footer.js";
 import { GitRefresher } from "./git.js";
 import type { ScheduleActivityFrame } from "./activity-animation.js";
 import { RuntimeRefreshSession } from "./refresh-session.js";
-import type { GlanceRenderStyleContext } from "../theme/adapter.js";
-import type { ExtensionStatusSource, GitSnapshot, GlanceConfig, GlanceState } from "../types.js";
+import { SPEED_FRAME_INTERVAL_MS } from "./live-speed.js";
+import type { GlanceTpsRenderStyleContext } from "../theme/adapter.js";
+import type { ExtensionStatusSource, GitSnapshot, GlanceTpsConfig, GlanceTpsState } from "../types.js";
 
-export type GlancePaneResult = { action: "save"; config: GlanceConfig } | { action: "cancel" };
+export type GlanceTpsPaneResult = { action: "save"; config: GlanceTpsConfig } | { action: "cancel" };
 
 export interface RuntimeGitRefresher {
 	schedule(immediate?: boolean): void;
@@ -39,18 +42,18 @@ export interface RuntimeGitRefresher {
 
 export interface CreateGitRefresherOptions {
 	canFetch(): boolean;
-	getConfig(): GlanceConfig["git"];
+	getConfig(): GlanceTpsConfig["git"];
 	getCwd(): string | undefined;
 	onSnapshot(cwd: string, snapshot: GitSnapshot): void;
 }
 
 export interface RuntimeShowPaneOptions {
-	readonly getPreviewState?: () => GlanceState;
+	readonly getPreviewState?: () => GlanceTpsState;
 	readonly getExtensionStatuses?: ExtensionStatusSource;
-	readonly renderStyleContext?: GlanceRenderStyleContext;
+	readonly renderStyleContext?: GlanceTpsRenderStyleContext;
 }
 
-export interface GlanceRuntimeAdapters {
+export interface GlanceTpsRuntimeAdapters {
 	loadDraft?(sessionId: string): string | null;
 	saveDraft?(sessionId: string, text: string | null): void;
 	workingSweepNowMs?: () => number;
@@ -58,8 +61,8 @@ export interface GlanceRuntimeAdapters {
 	getThinkingLevel(): string;
 	loadConfigSync(): ConfigLoadResult;
 	loadConfig(): Promise<ConfigLoadResult>;
-	saveConfig(config: GlanceConfig): Promise<void>;
-	showPane(initial: GlanceConfig, ctx: ExtensionCommandContext, previewState?: GlanceState, options?: RuntimeShowPaneOptions): Promise<GlancePaneResult>;
+	saveConfig(config: GlanceTpsConfig): Promise<void>;
+	showPane(initial: GlanceTpsConfig, ctx: ExtensionCommandContext, previewState?: GlanceTpsState, options?: RuntimeShowPaneOptions): Promise<GlanceTpsPaneResult>;
 	createGitRefresher?: (options: CreateGitRefresherOptions) => RuntimeGitRefresher;
 	nowMs?: () => number;
 	getTrueColor?: () => boolean;
@@ -69,7 +72,7 @@ type RuntimeModelSelectEvent = Extract<ExtensionEvent, { type: "model_select" }>
 type RuntimeThinkingLevelSelectEvent = Extract<ExtensionEvent, { type: "thinking_level_select" }>;
 type EditorFactory = NonNullable<ReturnType<ExtensionContext["ui"]["getEditorComponent"]>>;
 
-export interface GlanceRuntime {
+export interface GlanceTpsRuntime {
 	commands: {
 		openPane(args: string, ctx: ExtensionCommandContext): Promise<void>;
 	};
@@ -86,6 +89,8 @@ export interface GlanceRuntime {
 		uiPromptStart(event: UIPromptStartEvent, ctx: ExtensionContext): void;
 		uiPromptEnd(event: UIPromptEndEvent, ctx: ExtensionContext): void;
 		messageEnd(event: MessageEndEvent, ctx: ExtensionContext): Promise<void>;
+	messageStart(event: MessageStartEvent, ctx: ExtensionContext): void;
+	messageUpdate(event: MessageUpdateEvent, ctx: ExtensionContext): void;
 		turnEnd(event: TurnEndEvent, ctx: ExtensionContext): Promise<void>;
 		agentStart(event: AgentStartEvent, ctx: ExtensionContext): void;
 		agentEnd(event: AgentEndEvent, ctx: ExtensionContext): Promise<void>;
@@ -101,27 +106,28 @@ function isTuiMode(ctx: ExtensionContext): boolean {
 	return ctx.mode === "tui";
 }
 
-function runtimeRenderStyleContext(ctx: ExtensionContext, getTrueColor: () => boolean): GlanceRenderStyleContext {
+function runtimeRenderStyleContext(ctx: ExtensionContext, getTrueColor: () => boolean): GlanceTpsRenderStyleContext {
 	return {
 		getAmbientTone: () => ctx.ui.theme.appearance,
 		getTrueColor,
 	};
 }
 
-export function createGlanceRuntime(adapters: GlanceRuntimeAdapters): GlanceRuntime {
-	let config: GlanceConfig | undefined;
+export function createGlanceTpsRuntime(adapters: GlanceTpsRuntimeAdapters): GlanceTpsRuntime {
+	let config: GlanceTpsConfig | undefined;
 	let configWritable = true;
 	let configDiagnostic: string | undefined;
 	let configDiagnosticStatus: ConfigLoadResult["status"] | undefined;
 	let configDiagnosticNotified = false;
 	let extensionStatusProvider: Pick<ReadonlyFooterDataProvider, "getExtensionStatuses"> | undefined;
 	const getExtensionStatuses = () => extensionStatusProvider?.getExtensionStatuses();
-	let footer: GlanceFooter | undefined;
+	let footer: GlanceTpsFooter | undefined;
 	let ownedEditorFactory: EditorFactory | undefined;
 	let previousEditorFactory: EditorFactory | undefined;
 	let gitRefresher: RuntimeGitRefresher | undefined;
 	let requestRender: (() => void) | undefined;
-	let activeEditor: GlanceEditor | undefined;
+	let speedFrameTimer: ReturnType<typeof setInterval> | undefined;
+	let activeEditor: GlanceTpsEditor | undefined;
 	let waitingForUi = false;
 	let stash: PromptStash | undefined;
 	let canFetch = () => false;
@@ -129,7 +135,7 @@ export function createGlanceRuntime(adapters: GlanceRuntimeAdapters): GlanceRunt
 	const nowMs = adapters.nowMs ?? (() => performance.now());
 	const getTrueColor = adapters.getTrueColor ?? (() => getCapabilities().trueColor);
 
-	function acceptConfigLoad(result: ConfigLoadResult): GlanceConfig {
+	function acceptConfigLoad(result: ConfigLoadResult): GlanceTpsConfig {
 		config = result.config;
 		configWritable = result.writable;
 		configDiagnostic = result.diagnostic;
@@ -144,17 +150,17 @@ export function createGlanceRuntime(adapters: GlanceRuntimeAdapters): GlanceRunt
 		ctx.ui.notify(configDiagnostic, configDiagnosticStatus === "future" ? "warning" : "error");
 	}
 
-	async function ensureConfig(): Promise<GlanceConfig> {
+	async function ensureConfig(): Promise<GlanceTpsConfig> {
 		if (!config) return acceptConfigLoad(await adapters.loadConfig());
 		return config;
 	}
 
-	function getConfig(): GlanceConfig {
-		if (!config) throw new Error("pi-glance config not loaded");
+	function getConfig(): GlanceTpsConfig {
+		if (!config) throw new Error("pi-glance-tps config not loaded");
 		return config;
 	}
 
-	function shouldRunGitRefresher(activeConfig: GlanceConfig = getConfig()): boolean {
+	function shouldRunGitRefresher(activeConfig: GlanceTpsConfig = getConfig()): boolean {
 		return activeConfig.enabled && activeConfig.segments.some((segment) => segment.id === "git" && segment.enabled);
 	}
 
@@ -200,6 +206,25 @@ export function createGlanceRuntime(adapters: GlanceRuntimeAdapters): GlanceRunt
 		footer = undefined;
 	}
 
+	function stopSpeedFrameTimer(): void {
+		if (speedFrameTimer === undefined) return;
+		clearInterval(speedFrameTimer);
+		speedFrameTimer = undefined;
+	}
+
+	/** Spinner ticks exist only while an assistant message streams. */
+	function ensureSpeedFrameTimer(): void {
+		if (speedFrameTimer !== undefined || !refreshSession.isSpeedAnimating()) return;
+		speedFrameTimer = setInterval(() => {
+			if (!refreshSession.advanceSpeedFrame()) {
+				stopSpeedFrameTimer();
+				return;
+			}
+			requestRender?.();
+		}, SPEED_FRAME_INTERVAL_MS);
+		speedFrameTimer.unref?.();
+	}
+
 	function invalidateUiOwnership(): number {
 		activeEditor?.dispose();
 		activeEditor = undefined;
@@ -235,6 +260,7 @@ export function createGlanceRuntime(adapters: GlanceRuntimeAdapters): GlanceRunt
 
 	function clearUI(ctx: ExtensionContext): void {
 		if (!isTuiMode(ctx)) return;
+		stopSpeedFrameTimer();
 		const hadFooter = footer !== undefined;
 		invalidateUiOwnership();
 		clearGitRefresher();
@@ -256,7 +282,7 @@ export function createGlanceRuntime(adapters: GlanceRuntimeAdapters): GlanceRunt
 
 		reconcileGitRefresher(true);
 		ctx.ui.setFooter((tui, _theme, footerData) => {
-			const nextFooter = new GlanceFooter(() => {
+			const nextFooter = new GlanceTpsFooter(() => {
 				if (isCurrentUiGeneration(generation) && footer === nextFooter) {
 					extensionStatusProvider = undefined;
 					footer = undefined;
@@ -275,7 +301,7 @@ export function createGlanceRuntime(adapters: GlanceRuntimeAdapters): GlanceRunt
 		const nextEditorFactory: EditorFactory = (tui, theme, keybindings) => {
 			if (isCurrentUiGeneration(generation)) activeEditor?.dispose();
 			setUiRequestRender(generation, () => tui.requestRender());
-			const editor: GlanceEditor = new GlanceEditor(
+			const editor: GlanceTpsEditor = new GlanceTpsEditor(
 				tui,
 				theme,
 				keybindings,
@@ -301,7 +327,7 @@ export function createGlanceRuntime(adapters: GlanceRuntimeAdapters): GlanceRunt
 		commands: {
 			openPane: async (_args, ctx) => {
 				if (!isTuiMode(ctx)) {
-					ctx.ui.notify("pi-glance configuration pane requires TUI mode", "error");
+					ctx.ui.notify("pi-glance-tps configuration pane requires TUI mode", "error");
 					return;
 				}
 				const current = await ensureConfig();
@@ -314,20 +340,20 @@ export function createGlanceRuntime(adapters: GlanceRuntimeAdapters): GlanceRunt
 					getPreviewState: () => isCurrentUiGeneration(generation) ? refreshSession.ensureState(ctx) : previewState,
 				});
 				if (result.action === "cancel") {
-					ctx.ui.notify("pi-glance configuration cancelled", "info");
+					ctx.ui.notify("pi-glance-tps configuration cancelled", "info");
 					return;
 				}
 
 				const previousConfig = current;
 				const nextConfig = result.config;
 				if (!configWritable) {
-					ctx.ui.notify("pi-glance configuration save blocked to protect the existing file; fix or remove it, then /reload", "error");
+					ctx.ui.notify("pi-glance-tps configuration save blocked to protect the existing file; fix or remove it, then /reload", "error");
 					return;
 				}
 				try {
 					await adapters.saveConfig(nextConfig);
 				} catch {
-					ctx.ui.notify("pi-glance configuration save failed; keeping previous configuration", "error");
+					ctx.ui.notify("pi-glance-tps configuration save failed; keeping previous configuration", "error");
 					return;
 				}
 
@@ -344,7 +370,7 @@ export function createGlanceRuntime(adapters: GlanceRuntimeAdapters): GlanceRunt
 					ctx,
 					previousConfig.enabled === nextConfig.enabled ? undefined : () => installInputSurface(ctx),
 				);
-				ctx.ui.notify("pi-glance configuration saved", "info");
+				ctx.ui.notify("pi-glance-tps configuration saved", "info");
 			},
 		},
 		events: {
@@ -370,6 +396,7 @@ export function createGlanceRuntime(adapters: GlanceRuntimeAdapters): GlanceRunt
 			},
 			sessionShutdown: async (_event, ctx) => {
 				waitingForUi = false;
+				stopSpeedFrameTimer();
 				refreshSession.sessionShutdown();
 				clearUI(ctx);
 			},
@@ -404,13 +431,23 @@ export function createGlanceRuntime(adapters: GlanceRuntimeAdapters): GlanceRunt
 				refreshSession.uiPromptEnd();
 				activeEditor?.refreshActivity();
 			},
+			messageStart: (_event, _ctx) => {
+				refreshSession.messageStart();
+				ensureSpeedFrameTimer();
+			},
+			messageUpdate: (event, _ctx) => {
+				refreshSession.messageUpdate(event.message);
+				ensureSpeedFrameTimer();
+			},
 			messageEnd: async (event, ctx) => {
 				await refreshSession.messageEnd(event, ctx);
+				if (!refreshSession.isSpeedAnimating()) stopSpeedFrameTimer();
 			},
 			turnEnd: async (event, ctx) => {
 				await refreshSession.turnEnd(event, ctx);
 			},
 			agentStart: (_event, _ctx) => {
+				stopSpeedFrameTimer();
 				refreshSession.agentStart();
 			},
 			agentEnd: async (event, ctx) => {

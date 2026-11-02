@@ -4,7 +4,7 @@ import type { CustomEditor, KeybindingsManager } from "@earendil-works/pi-coding
 import { stripTerminalSequences, visibleWidth, type EditorTheme, type TUI } from "@earendil-works/pi-tui";
 import { defaultConfig } from "../../src/config/model.js";
 import { PromptStash } from "../../src/input/stash.js";
-import { GlanceEditor } from "../../src/surface/editor.js";
+import { GlanceTpsEditor } from "../../src/surface/editor.js";
 import { richInputSurfaceState } from "../support/surface-test-harness.js";
 
 type NativeIndicator = NonNullable<Parameters<CustomEditor["setWorkingStatusIndicator"]>[0]>;
@@ -20,7 +20,7 @@ function indicator(kind: NativeIndicator["kind"], text: () => string): NativeInd
 test("native activity belongs in the bottom border and exclusively replaces the current draft hint", () => {
 	const config = defaultConfig();
 	const stash = new PromptStash("saved draft", () => {});
-	const editor = new GlanceEditor({ terminal: { rows: 38 }, requestRender() {} } as unknown as TUI,
+	const editor = new GlanceTpsEditor({ terminal: { rows: 38 }, requestRender() {} } as unknown as TUI,
 		theme, keys, richInputSurfaceState, () => config, { stash });
 	editor.focused = true; editor.setText("input 中文🙂");
 	assert.equal(editor.embedWorkingStatus, true, "Pi must route every status into the editor, never a separate row");
@@ -34,7 +34,7 @@ test("native activity belongs in the bottom border and exclusively replaces the 
 		assert.equal(frame[config.editor.topMarginRows], idle[config.editor.topMarginRows], "top facts remain unchanged");
 		assert.ok(stripTerminalSequences(frame.at(-1)!).includes(text));
 		assert.ok(!frame.at(-1)!.includes("alt+s"));
-		assert.ok(!frame.at(-1)!.includes("\x1b[31m"), "native text receives Glance colors");
+		assert.ok(!frame.at(-1)!.includes("\x1b[31m"), "native text receives GlanceTps colors");
 		text = "◌ DEMO updated in 3s";
 		assert.ok(stripTerminalSequences(editor.render(180).at(-1)!).includes(text), "do not cache live native countdown text");
 		for (const width of [0, 1, 2, 4, 8, 24, 80]) for (const line of editor.render(width)) assert.ok(visibleWidth(line) <= width);

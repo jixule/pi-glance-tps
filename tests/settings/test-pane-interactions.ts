@@ -104,7 +104,7 @@ test("sections remember the detail page; returning and re-entering restores its 
 
 test("list navigation clamps, including paging and destructive confirmation choices", () => {
 	const root = createPaneModel(defaultConfig());
-	assert.equal(selected(step(root, { type: "move", direction: "up" })).label, "Glance");
+	assert.equal(selected(step(root, { type: "move", direction: "up" })).label, "GlanceTps");
 	assert.equal(selected(down(root, 999)).label, "Workspace label");
 	const confirmation = step(root, { type: "reset" });
 	assert.equal(createPaneViewModel(step(confirmation, { type: "move", direction: "up" })).choices.find(c => c.selected)!.label, "Keep editing");

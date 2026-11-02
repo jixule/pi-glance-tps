@@ -3,8 +3,8 @@ import { test } from "node:test";
 import { stripTerminalSequences, visibleWidth } from "@earendil-works/pi-tui";
 import { nativeActivity } from "../support/activity-harness.js";
 import { defaultConfig } from "../../src/config/model.js";
-import type { GlanceEditor } from "../../src/surface/editor.js";
-import { resolveBuiltInGlanceStyles } from "../../src/theme/adapter.js";
+import type { GlanceTpsEditor } from "../../src/surface/editor.js";
+import { resolveBuiltInGlanceTpsStyles } from "../../src/theme/adapter.js";
 import { createGitHarness, createRuntimeHarness, createRuntimeTestContext, invokeEditorFactory } from "../support/runtime-harness.js";
 
 // Both preferences use the same save transaction. Exercise that boundary once.
@@ -23,7 +23,7 @@ for (const outcome of ["save", "cancel", "failed", "readonly"] as const) test(`$
 		git: createGitHarness(), workingSweepNowMs: () => now,
 	});
 	harness.runtime.events.sessionStart({}, ctx.ctx);
-	const editor = invokeEditorFactory(ctx, 0, () => {}) as GlanceEditor;
+	const editor = invokeEditorFactory(ctx, 0, () => {}) as GlanceTpsEditor;
 	editor.focused = true; editor.setText("keep 中文🙂 draft");
 	editor.setWorkingStatusIndicator(nativeActivity("working")); editor.render(220);
 	now = 1200;
@@ -32,7 +32,7 @@ for (const outcome of ["save", "cancel", "failed", "readonly"] as const) test(`$
 	await harness.runtime.commands.openPane("", ctx.ctx);
 	const after = editor.render(220);
 	if (outcome === "save") {
-		const blue = resolveBuiltInGlanceStyles("light", "truecolor", "blue");
+		const blue = resolveBuiltInGlanceTpsStyles("light", "truecolor", "blue");
 		const peak = blue.highlight!(blue.border, 1)("beam").match(/\x1b\[38;2;[^m]*m/)![0];
 		assert.ok(after.join("").includes(peak), "the live beam uses the saved color");
 		assert.equal(after.join("").includes("External ready"), false);

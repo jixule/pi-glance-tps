@@ -1,5 +1,5 @@
 import { configToText, defaultConfig } from "../../src/config/model.js";
-import piGlance from "../../index.js";
+import piGlanceTps from "../../index.js";
 import { strict as assert } from "node:assert";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -7,9 +7,9 @@ import { join } from "node:path";
 import { createRuntimeTestContext } from "../support/runtime-harness.js";
 import type { Component, TUI } from "@earendil-works/pi-tui";
 import type { ExtensionAPI, ExtensionCommandContext, ExtensionContext, KeybindingsManager, Theme } from "@earendil-works/pi-coding-agent";
-import type { GlanceConfig } from "../../src/types.js";
+import type { GlanceTpsConfig } from "../../src/types.js";
 
-type PaneResult = { action: "save"; config: GlanceConfig } | { action: "cancel" };
+type PaneResult = { action: "save"; config: GlanceTpsConfig } | { action: "cancel" };
 type CapturedHandler = (event: unknown, ctx: ExtensionContext) => unknown;
 type CommandHandler = (args: string, ctx: ExtensionCommandContext) => Promise<void> | void;
 
@@ -74,11 +74,11 @@ function createContext(customResults: PaneResult[]): TestContext {
 	return { ctx, notifications, surfaceCalls, customResults, renderedPanes };
 }
 
-function cloneConfig(config: GlanceConfig): GlanceConfig {
-	return JSON.parse(JSON.stringify(config)) as GlanceConfig;
+function cloneConfig(config: GlanceTpsConfig): GlanceTpsConfig {
+	return JSON.parse(JSON.stringify(config)) as GlanceTpsConfig;
 }
 
-function disabled(config: GlanceConfig): GlanceConfig {
+function disabled(config: GlanceTpsConfig): GlanceTpsConfig {
 	const next = cloneConfig(config);
 	next.enabled = false;
 	return next;
@@ -94,11 +94,11 @@ function assertNoNewSurfaceCalls(surfaceCalls: string[], baseline: number, messa
 
 async function main(): Promise<void> {
 	const previousAgentDir = process.env.PI_CODING_AGENT_DIR;
-	const agentDir = await mkdtemp(join(tmpdir(), "pi-glance-command-save-"));
+	const agentDir = await mkdtemp(join(tmpdir(), "pi-glance-tps-command-save-"));
 	process.env.PI_CODING_AGENT_DIR = agentDir;
 
 	try {
-		const configDir = join(agentDir, "pi-glance");
+		const configDir = join(agentDir, "pi-glance-tps");
 		const configPath = join(configDir, "config.json");
 		const initialConfig = defaultConfig();
 		initialConfig.git.autoFetch = false;
@@ -107,12 +107,12 @@ async function main(): Promise<void> {
 
 
 		const pi = createPi();
-		piGlance(pi.api);
+		piGlanceTps(pi.api);
 		const test = createContext([]);
 		getHandler(pi, "session_start")({ type: "session_start" }, test.ctx);
 		assert.deepEqual(test.surfaceCalls, ["setFooter:install", "setEditorComponent:install"], "enabled session_start should install the input surface");
 
-		const command = getCommand(pi, "glance");
+		const command = getCommand(pi, "glance-tps");
 		await rm(configDir, { recursive: true, force: true });
 		await writeFile(configDir, "not a directory", "utf8");
 
@@ -120,17 +120,17 @@ async function main(): Promise<void> {
 		const failureBaseline = test.surfaceCalls.length;
 		await command("", test.ctx);
 		assert.equal(
-			hasNotification(test.notifications, "pi-glance configuration save failed; keeping previous configuration", "error"),
+			hasNotification(test.notifications, "pi-glance-tps configuration save failed; keeping previous configuration", "error"),
 			true,
 			"save failure should notify an error",
 		);
-		assert.equal(hasNotification(test.notifications, "pi-glance configuration saved", "info"), false, "save failure should not notify success");
+		assert.equal(hasNotification(test.notifications, "pi-glance-tps configuration saved", "info"), false, "save failure should not notify success");
 		assertNoNewSurfaceCalls(test.surfaceCalls, failureBaseline, "save failure should not refresh or reinstall/clear the input surface");
 
 		test.customResults.push({ action: "cancel" });
 		await command("", test.ctx);
 		const activeConfigPane = test.renderedPanes.at(-1)?.join("\n") ?? "";
-		assert.match(activeConfigPane, /Glance\s+On/, "after failed save, the next /glance pane should still receive the previous enabled config");
+		assert.match(activeConfigPane, /GlanceTps\s+On/, "after failed save, the next /glance-tps pane should still receive the previous enabled config");
 
 		await rm(configDir, { force: true });
 		await mkdir(configDir, { recursive: true });
@@ -138,7 +138,7 @@ async function main(): Promise<void> {
 		test.customResults.push({ action: "save", config: disabled(initialConfig) });
 		await command("", test.ctx);
 		assert.equal(JSON.parse(await readFile(configPath, "utf8")).enabled, false, "successful save should write next config to disk");
-		assert.equal(hasNotification(test.notifications, "pi-glance configuration saved", "info"), true, "successful save should notify success");
+		assert.equal(hasNotification(test.notifications, "pi-glance-tps configuration saved", "info"), true, "successful save should notify success");
 		assert.deepEqual(
 			test.surfaceCalls.slice(successBaseline),
 			["setEditorComponent:clear", "setFooter:clear"],
@@ -152,10 +152,10 @@ async function main(): Promise<void> {
 		test.customResults.push({ action: "cancel" });
 		await command("", test.ctx);
 		const disabledActivePane = test.renderedPanes.at(-1)?.join("\n") ?? "";
-		assert.match(disabledActivePane, /Glance\s+Off/, "after successful disabled save, the next /glance pane should receive disabled active config");
-		assert.equal(hasNotification(test.notifications.slice(notificationsBeforeCancel), "pi-glance configuration cancelled", "info"), true, "cancel should keep the existing cancellation notice");
+		assert.match(disabledActivePane, /GlanceTps\s+Off/, "after successful disabled save, the next /glance-tps pane should receive disabled active config");
+		assert.equal(hasNotification(test.notifications.slice(notificationsBeforeCancel), "pi-glance-tps configuration cancelled", "info"), true, "cancel should keep the existing cancellation notice");
 		assert.equal(
-			hasNotification(test.notifications.slice(notificationsBeforeCancel), "pi-glance configuration save failed; keeping previous configuration", "error"),
+			hasNotification(test.notifications.slice(notificationsBeforeCancel), "pi-glance-tps configuration save failed; keeping previous configuration", "error"),
 			false,
 			"cancel should not attempt to save even when the config path is blocked",
 		);
@@ -168,4 +168,4 @@ async function main(): Promise<void> {
 }
 
 await main();
-console.log("✓ /glance command save failure checks passed");
+console.log("✓ /glance-tps command save failure checks passed");

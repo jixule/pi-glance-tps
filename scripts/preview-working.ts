@@ -6,11 +6,11 @@ import { createConfigStore } from "../src/config/store.js";
 import { WORKING_SWEEP_COLOR_VALUES, WORKING_SWEEP_MODE_VALUES, nextOption } from "../src/config/options.js";
 import { ActivityClock, activityMotion } from "../src/runtime/activity-animation.js";
 import { renderInputSurfaceFrame } from "../src/surface/frame.js";
-import { GlanceLineRenderer } from "../src/surface/status-line.js";
-import { resolveBuiltInGlanceStyles, type ResolvedGlanceStyles } from "../src/theme/adapter.js";
-import { GLANCE_THEME_IDS, isGlanceThemeName, type GlanceThemeName } from "../src/theme/themes.js";
-import { selectGlanceTheme, type GlanceAmbientTone } from "../src/theme/selection.js";
-import type { ActivityKind, GlanceState } from "../src/types.js";
+import { GlanceTpsLineRenderer } from "../src/surface/status-line.js";
+import { resolveBuiltInGlanceTpsStyles, type ResolvedGlanceTpsStyles } from "../src/theme/adapter.js";
+import { TACH_THEME_IDS, isGlanceTpsThemeName, type GlanceTpsThemeName } from "../src/theme/themes.js";
+import { selectGlanceTpsTheme, type GlanceTpsAmbientTone } from "../src/theme/selection.js";
+import type { ActivityKind, GlanceTpsState } from "../src/types.js";
 
 if (!process.stdin.isTTY || !process.stdout.isTTY) {
 	console.error("Run npm run preview:working in a terminal.");
@@ -18,11 +18,11 @@ if (!process.stdin.isTTY || !process.stdout.isTTY) {
 }
 
 const agentDir = getAgentDir();
-const config = createConfigStore(join(agentDir, "pi-glance", "config.json")).loadConfigSync().config;
+const config = createConfigStore(join(agentDir, "pi-glance-tps", "config.json")).loadConfigSync().config;
 config.enabled = true;
 config.editor.activityMode = process.argv.includes("--text") ? "text" : "sweep";
 const cwd = process.cwd();
-const state: GlanceState = {
+const state: GlanceTpsState = {
 	workspace: { name: basename(cwd), path: cwd },
 	git: { repo: true, branch: "main", detached: false, sha: "abcdef1", upstream: "origin/main", ahead: 1, behind: 0, staged: 0, unstaged: 1, untracked: 0, conflicts: 0, dirty: true, status: "dirty", updatedAt: 0 },
 	providers: { availableCount: 2 },
@@ -33,13 +33,14 @@ const state: GlanceState = {
 		lastRun: { elapsedMs: 1000, outputTokens: 43, tokensPerSecond: 43 },
 		currentRun: null,
 	},
+	liveSpeed: null,
 	version: 0,
 };
-let tone: GlanceAmbientTone = "light";
+let tone: GlanceTpsAmbientTone = "light";
 if (process.argv.includes("--light")) tone = "light";
 if (process.argv.includes("--dark")) tone = "dark";
 const requestedTheme = process.argv.find(arg => arg.startsWith("--theme="))?.slice("--theme=".length);
-let previewTheme: GlanceThemeName | undefined = isGlanceThemeName(requestedTheme) ? requestedTheme : undefined;
+let previewTheme: GlanceTpsThemeName | undefined = isGlanceTpsThemeName(requestedTheme) ? requestedTheme : undefined;
 let trueColor = process.argv.includes("--256") ? false : getCapabilities().trueColor;
 if (process.argv.includes("--perimeter")) config.editor.workingSweep = "perimeter";
 let running = true;
@@ -47,8 +48,8 @@ let phase: ActivityKind = "working";
 let shortPath = false;
 let warnings = false;
 let closed = false;
-const statusLine = new GlanceLineRenderer();
-function renderStatus(budget: number, styles: ResolvedGlanceStyles): string {
+const statusLine = new GlanceTpsLineRenderer();
+function renderStatus(budget: number, styles: ResolvedGlanceTpsStyles): string {
 	return statusLine.render(state, config, budget, state.providers.availableCount, { styles });
 }
 const terminal = new ProcessTerminal();
@@ -91,9 +92,9 @@ tui.addChild({
 			previewTheme = undefined;
 			tone = tone === "dark" ? "light" : "dark";
 		} else if (matchesKey(data, "left") || matchesKey(data, "right")) {
-			const current = previewTheme ?? selectGlanceTheme(config.theme, tone);
+			const current = previewTheme ?? selectGlanceTpsTheme(config.theme, tone);
 			const direction = matchesKey(data, "left") ? -1 : 1;
-			previewTheme = GLANCE_THEME_IDS[(GLANCE_THEME_IDS.indexOf(current) + direction + GLANCE_THEME_IDS.length) % GLANCE_THEME_IDS.length];
+			previewTheme = TACH_THEME_IDS[(TACH_THEME_IDS.indexOf(current) + direction + TACH_THEME_IDS.length) % TACH_THEME_IDS.length];
 		} else if (matchesKey(data, "a")) {
 			config.editor.workingSweepColor = nextOption(config.editor.workingSweepColor, WORKING_SWEEP_COLOR_VALUES);
 		} else if (matchesKey(data, "c")) {
@@ -111,12 +112,12 @@ tui.addChild({
 	},
 	render(width) {
 		return [
-			"Glance Activity · DEMO 演示数据",
-			`${running ? phase : "idle"} · ${config.editor.activityMode} · ${config.editor.workingSweep} · ${config.editor.workingSweepColor} · ${previewTheme ?? selectGlanceTheme(config.theme, tone)} · ${trueColor ? "RGB" : "ANSI 256"}`,
+			"GlanceTps Activity · DEMO 演示数据",
+			`${running ? phase : "idle"} · ${config.editor.activityMode} · ${config.editor.workingSweep} · ${config.editor.workingSweepColor} · ${previewTheme ?? selectGlanceTpsTheme(config.theme, tone)} · ${trueColor ? "RGB" : "ANSI 256"}`,
 			"",
 			...renderInputSurfaceFrame({
 				state, config, width,
-				styles: resolveBuiltInGlanceStyles(previewTheme ?? selectGlanceTheme(config.theme, tone), trueColor ? "truecolor" : "ansi256", config.editor.workingSweepColor),
+				styles: resolveBuiltInGlanceTpsStyles(previewTheme ?? selectGlanceTpsTheme(config.theme, tone), trueColor ? "truecolor" : "ansi256", config.editor.workingSweepColor),
 				body: { kind: "preview" },
 				chrome: { animation: sweep.frame(), activity: running ? { kind: phase, render: () => `◌ DEMO ${phase}` } : undefined, hasDraft: true },
 				status: { render: renderStatus },

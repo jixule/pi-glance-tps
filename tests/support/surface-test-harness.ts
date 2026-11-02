@@ -1,5 +1,5 @@
 import { testState } from "./helpers.js";
-import type { GlanceConfig, GlanceState, SegmentId } from "../../src/types.js";
+import type { GlanceTpsConfig, GlanceTpsState, SegmentId } from "../../src/types.js";
 
 const ANSI_PATTERN = /\x1b(?:\][^\x07]*(?:\x07|\x1b\\)|_[^\x07]*(?:\x07|\x1b\\)|\[[0-?]*[ -/]*[@-~])/g;
 
@@ -7,14 +7,14 @@ export function stripAnsi(text: string): string {
 	return text.replace(ANSI_PATTERN, "");
 }
 
-export function onlySegments(config: GlanceConfig, ids: SegmentId[]): void {
+export function onlySegments(config: GlanceTpsConfig, ids: SegmentId[]): void {
 	const enabled = new Set(ids);
 	config.segments = config.segments.map((segment) => ({ ...segment, enabled: enabled.has(segment.id) }));
 }
 
-export function richInputSurfaceState(): GlanceState {
+export function richInputSurfaceState(): GlanceTpsState {
 	return testState({
-		workspace: { name: "07_pi-glance", path: "/Users/winnie/00_project/07_pi-glance" },
+		workspace: { name: "07_pi-glance-tps", path: "/Users/winnie/00_project/07_pi-glance-tps" },
 		git: {
 			repo: true,
 			branch: "main",
@@ -38,6 +38,6 @@ export function richInputSurfaceState(): GlanceState {
 	});
 }
 
-export function dirtyInputSurfaceState(): GlanceState {
+export function dirtyInputSurfaceState(): GlanceTpsState {
 	return richInputSurfaceState();
 }

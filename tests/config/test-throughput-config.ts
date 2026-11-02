@@ -2,7 +2,7 @@ import { strict as assert } from "node:assert";
 import { CONFIG_VERSION, cloneConfig, configFromText, configToText, defaultConfig, normalizeConfig } from "../../src/config/model.js";
 import { THROUGHPUT_PRECISION_DESCRIPTOR } from "../../src/config/schema.js";
 
-import type { SegmentConfig as SegmentLike, ThroughputPrecision, GlanceConfig } from "../../src/types.js";
+import type { SegmentConfig as SegmentLike, ThroughputPrecision, GlanceTpsConfig } from "../../src/types.js";
 
 function segmentSummary(config: { segments: readonly SegmentLike[] }): SegmentLike[] {
 	return config.segments.map((segment) => ({ id: segment.id, enabled: segment.enabled }));
@@ -12,7 +12,7 @@ function assertSegments(actual: readonly SegmentLike[], expected: readonly Segme
 	assert.deepEqual(segmentSummary({ segments: actual }), expected, message);
 }
 
-function precisionOf(config: GlanceConfig): ThroughputPrecision {
+function precisionOf(config: GlanceTpsConfig): ThroughputPrecision {
 	return config.throughput.precision;
 }
 

@@ -4,7 +4,7 @@ import { matchesKey, type TUI } from "@earendil-works/pi-tui";
 import type { KeybindingsManager } from "@earendil-works/pi-coding-agent";
 import { defaultConfig } from "../../src/config/model.js";
 import { PromptStash } from "../../src/input/stash.js";
-import { GlanceEditor } from "../../src/surface/editor.js";
+import { GlanceTpsEditor } from "../../src/surface/editor.js";
 import { testState } from "../support/helpers.js";
 
 function harness(bindings: Record<string, string> = {}) {
@@ -18,7 +18,7 @@ function harness(bindings: Record<string, string> = {}) {
 		getEffectiveConfig: () => bindings,
 		matches: (data: string, action: string) => bindings[action] ? matchesKey(data, bindings[action] as never) : false,
 	} as unknown as KeybindingsManager;
-	const editor = new GlanceEditor({ terminal: { rows: 40 }, requestRender() {} } as unknown as TUI, theme, keys,
+	const editor = new GlanceTpsEditor({ terminal: { rows: 40 }, requestRender() {} } as unknown as TUI, theme, keys,
 		() => testState(), () => config, { stash, onStashError: message => errors.push(message) });
 	editor.focused = true;
 	return { editor, config, stash, errors, persisted: () => persisted };

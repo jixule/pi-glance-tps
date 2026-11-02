@@ -1,7 +1,7 @@
 import { getCapabilities, ProcessTerminal, TuiAltScreen } from "@earendil-works/pi-tui";
 import { defaultConfig } from "../src/config/model.js";
-import { GlanceConfigPane } from "../src/settings/pane.js";
-import { resolveBuiltInGlanceStyles } from "../src/theme/adapter.js";
+import { GlanceTpsConfigPane } from "../src/settings/pane.js";
+import { resolveBuiltInGlanceTpsStyles } from "../src/theme/adapter.js";
 
 if (!process.stdin.isTTY || !process.stdout.isTTY) {
 	console.error("Run npm run preview:settings in a terminal.");
@@ -9,11 +9,11 @@ if (!process.stdin.isTTY || !process.stdout.isTTY) {
 }
 const tone = process.argv.includes("--light") ? "light" : "dark";
 const trueColor = !process.argv.includes("--256") && getCapabilities().trueColor;
-const styles = resolveBuiltInGlanceStyles(tone, trueColor ? "truecolor" : "ansi256");
+const styles = resolveBuiltInGlanceTpsStyles(tone, trueColor ? "truecolor" : "ansi256");
 const terminal = new ProcessTerminal();
 const tui = new TuiAltScreen(terminal, false, undefined, { mouse: false });
 let closed = false;
-const pane = new GlanceConfigPane(defaultConfig(), {
+const pane = new GlanceTpsConfigPane(defaultConfig(), {
 	fg: (color, text) => (color === "accent" ? styles.title : color === "warning" ? styles.warn : color === "dim" ? styles.dim : styles.text)(text),
 }, () => { void close(); }, () => tui.requestRender(), undefined, () => terminal.rows, undefined, { renderStyleContext: { ambientTone: tone, trueColor } });
 async function close(): Promise<void> {

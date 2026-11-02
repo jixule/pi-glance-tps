@@ -2,8 +2,8 @@ import { test } from "node:test";
 import { strict as assert } from "node:assert";
 import type { ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
 import { defaultConfig } from "../../src/config/model.js";
-import { createGlanceRuntime } from "../../src/runtime/runtime.js";
-import type { GlanceConfig } from "../../src/types.js";
+import { createGlanceTpsRuntime } from "../../src/runtime/runtime.js";
+import type { GlanceTpsConfig } from "../../src/types.js";
 
 interface TestContext {
 	ctx: ExtensionCommandContext;
@@ -11,10 +11,10 @@ interface TestContext {
 }
 
 import type { RuntimeHarnessRuntime as RuntimeRecord } from "../support/runtime-harness.js";
-import type { ModelSpeedMeasurement as ModelSpeedExpectation, GlanceState } from "../../src/types.js";
+import type { ModelSpeedMeasurement as ModelSpeedExpectation, GlanceTpsState } from "../../src/types.js";
 
-function cloneConfig(config: GlanceConfig): GlanceConfig {
-	return JSON.parse(JSON.stringify(config)) as GlanceConfig;
+function cloneConfig(config: GlanceTpsConfig): GlanceTpsConfig {
+	return JSON.parse(JSON.stringify(config)) as GlanceTpsConfig;
 }
 
 function assistant(output: number, extras: Record<string, unknown> = {}, stopReason = "stop", responseId?: string): Record<string, unknown> {
@@ -82,16 +82,16 @@ function createContext(): TestContext {
 	return { ctx, getRenderRequests: () => renderRequests };
 }
 
-function createRuntime(nowValues: number[]): { runtime: RuntimeRecord; capturedStates: GlanceState[]; getRemainingNowReads(): number } {
-	const capturedStates: GlanceState[] = [];
+function createRuntime(nowValues: number[]): { runtime: RuntimeRecord; capturedStates: GlanceTpsState[]; getRemainingNowReads(): number } {
+	const capturedStates: GlanceTpsState[] = [];
 	const pendingNowValues = [...nowValues];
 	const config = defaultConfig();
 	const adapters = {
 		getThinkingLevel: () => "max",
 		loadConfigSync: () => ({ config: cloneConfig(config), status: "loaded" as const, writable: true }),
 		loadConfig: async () => ({ config: cloneConfig(config), status: "loaded" as const, writable: true }),
-		saveConfig: async (_config: GlanceConfig) => {},
-		showPane: async (_initial: GlanceConfig, _ctx: ExtensionCommandContext, previewState?: GlanceState) => {
+		saveConfig: async (_config: GlanceTpsConfig) => {},
+		showPane: async (_initial: GlanceTpsConfig, _ctx: ExtensionCommandContext, previewState?: GlanceTpsState) => {
 			assert.ok(previewState);
 			capturedStates.push(structuredClone(previewState));
 			return { action: "cancel" as const };
@@ -104,20 +104,20 @@ function createRuntime(nowValues: number[]): { runtime: RuntimeRecord; capturedS
 		},
 	};
 	return {
-		runtime: createGlanceRuntime(adapters) as RuntimeRecord,
+		runtime: createGlanceTpsRuntime(adapters) as RuntimeRecord,
 		capturedStates,
 		getRemainingNowReads: () => pendingNowValues.length,
 	};
 }
 
-async function captureState(runtime: RuntimeRecord, test: TestContext, capturedStates: GlanceState[]): Promise<GlanceState> {
+async function captureState(runtime: RuntimeRecord, test: TestContext, capturedStates: GlanceTpsState[]): Promise<GlanceTpsState> {
 	await runtime.commands.openPane("", test.ctx);
 	const state = capturedStates.at(-1);
 	assert.ok(state);
 	return state;
 }
 
-function slots(state: GlanceState): GlanceState["throughput"] {
+function slots(state: GlanceTpsState): GlanceTpsState["throughput"] {
 	return state.throughput;
 }
 
@@ -170,7 +170,7 @@ await test("runtime should exclude blocking extension UI prompt spans from provi
 	await runtime.events.messageEnd(messageEnd(assistant(50, {}, "stop", "prompt-split")), test.ctx);
 	const expected = expectedTurn(2_000, 50);
 	assert.deepEqual(slots(await captureState(runtime, test, capturedStates)), { lastRun: null, currentRun: expected }, "runtime should exclude blocking extension UI prompt spans from provisional model speed");
-	assert.equal(test.getRenderRequests() - renderBeforePrompt, 1, "blocking UI spans do not invent a Glance animation or a model-speed render");
+	assert.equal(test.getRenderRequests() - renderBeforePrompt, 1, "blocking UI spans do not invent a GlanceTps animation or a model-speed render");
 	assert.equal(getRemainingNowReads(), 0, "output updates delivered inside a UI prompt span should not consume the model-speed clock");
 });
 

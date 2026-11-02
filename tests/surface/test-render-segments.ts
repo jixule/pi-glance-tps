@@ -1,13 +1,13 @@
 import { strict as assert } from "node:assert";
 import { defaultConfig } from "../../src/config/model.js";
 import { stripControls } from "../../src/surface/format.js";
-import { renderGlanceLine } from "../../src/surface/status-line.js";
+import { renderGlanceTpsLine } from "../../src/surface/status-line.js";
 import { testState } from "../support/helpers.js";
-import type { GlanceState } from "../../src/types.js";
+import type { GlanceTpsState } from "../../src/types.js";
 
 function line(
 	segmentId: "context" | "cost" | "tokens" | "model",
-	stateOverrides: Partial<GlanceState> = {},
+	stateOverrides: Partial<GlanceTpsState> = {},
 	mutateConfig?: (config: ReturnType<typeof defaultConfig>) => void,
 	width = 120,
 ): string {
@@ -15,7 +15,7 @@ function line(
 	config.icons = "plain";
 	config.segments = config.segments.map((segment) => ({ ...segment, enabled: segment.id === segmentId }));
 	mutateConfig?.(config);
-	return stripControls(renderGlanceLine(testState(stateOverrides), config, width));
+	return stripControls(renderGlanceTpsLine(testState(stateOverrides), config, width));
 }
 
 assert.equal(line("context"), "ctx 23% 47k/200k", "context defaults to percent / tokens");
