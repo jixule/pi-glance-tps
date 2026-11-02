@@ -129,6 +129,7 @@ export function createGlanceTpsRuntime(adapters: GlanceTpsRuntimeAdapters): Glan
 	let speedFrameTimer: ReturnType<typeof setInterval> | undefined;
 	let activeEditor: GlanceTpsEditor | undefined;
 	let waitingForUi = false;
+	let inputPaneOpen = false;
 	let stash: PromptStash | undefined;
 	let canFetch = () => false;
 	let uiGeneration = 0;
@@ -212,9 +213,17 @@ export function createGlanceTpsRuntime(adapters: GlanceTpsRuntimeAdapters): Glan
 		speedFrameTimer = undefined;
 	}
 
+	/** The speed segment only animates when the status line actually shows it. */
+	function speedAnimationAllowed(): boolean {
+		const activeConfig = config;
+		return activeConfig !== undefined && activeConfig.enabled &&
+			activeConfig.segments.some((segment) => segment.id === "throughput" && segment.enabled);
+	}
+
 	/** Spinner ticks exist only while an assistant message streams. */
 	function ensureSpeedFrameTimer(): void {
-		if (speedFrameTimer !== undefined || !refreshSession.isSpeedAnimating()) return;
+		if (speedFrameTimer !== undefined || inputPaneOpen || waitingForUi) return;
+		if (!refreshSession.isSpeedAnimating() || !speedAnimationAllowed()) return;
 		speedFrameTimer = setInterval(() => {
 			if (!refreshSession.advanceSpeedFrame()) {
 				stopSpeedFrameTimer();
@@ -323,6 +332,50 @@ export function createGlanceTpsRuntime(adapters: GlanceTpsRuntimeAdapters): Glan
 		ctx.ui.setEditorComponent(nextEditorFactory);
 	}
 
+	async function handlePane(ctx: ExtensionCommandContext): Promise<void> {
+		const current = await ensureConfig();
+		notifyConfigDiagnostic(ctx);
+		const previewState = refreshSession.ensureState(ctx);
+		const generation = uiGeneration;
+		const renderStyleContext = runtimeRenderStyleContext(ctx, getTrueColor);
+		const result = await adapters.showPane(current, ctx, previewState, {
+			renderStyleContext, getExtensionStatuses,
+			getPreviewState: () => isCurrentUiGeneration(generation) ? refreshSession.ensureState(ctx) : previewState,
+		});
+		if (result.action === "cancel") {
+			ctx.ui.notify("pi-glance-tps configuration cancelled", "info");
+			return;
+		}
+
+		const previousConfig = current;
+		const nextConfig = result.config;
+		if (!configWritable) {
+			ctx.ui.notify("pi-glance-tps configuration save blocked to protect the existing file; fix or remove it, then /reload", "error");
+			return;
+		}
+		try {
+			await adapters.saveConfig(nextConfig);
+		} catch {
+			ctx.ui.notify("pi-glance-tps configuration save failed; keeping previous configuration", "error");
+			return;
+		}
+
+		config = nextConfig;
+		configWritable = true;
+		configDiagnostic = undefined;
+		configDiagnosticStatus = "loaded";
+		configDiagnosticNotified = false;
+		if (previousConfig.enabled && nextConfig.enabled) {
+			reconcileGitRefresher();
+			activeEditor?.refreshActivity();
+		}
+		await refreshSession.configSaved(
+			ctx,
+			previousConfig.enabled === nextConfig.enabled ? undefined : () => installInputSurface(ctx),
+		);
+		ctx.ui.notify("pi-glance-tps configuration saved", "info");
+	}
+
 	return {
 		commands: {
 			openPane: async (_args, ctx) => {
@@ -330,47 +383,16 @@ export function createGlanceTpsRuntime(adapters: GlanceTpsRuntimeAdapters): Glan
 					ctx.ui.notify("pi-glance-tps configuration pane requires TUI mode", "error");
 					return;
 				}
-				const current = await ensureConfig();
-				notifyConfigDiagnostic(ctx);
-				const previewState = refreshSession.ensureState(ctx);
-				const generation = uiGeneration;
-				const renderStyleContext = runtimeRenderStyleContext(ctx, getTrueColor);
-				const result = await adapters.showPane(current, ctx, previewState, {
-					renderStyleContext, getExtensionStatuses,
-					getPreviewState: () => isCurrentUiGeneration(generation) ? refreshSession.ensureState(ctx) : previewState,
-				});
-				if (result.action === "cancel") {
-					ctx.ui.notify("pi-glance-tps configuration cancelled", "info");
-					return;
-				}
-
-				const previousConfig = current;
-				const nextConfig = result.config;
-				if (!configWritable) {
-					ctx.ui.notify("pi-glance-tps configuration save blocked to protect the existing file; fix or remove it, then /reload", "error");
-					return;
-				}
+				// The pane owns the screen while it is open: pause the speed spinner so
+				// its ticks cannot race the overlay redraw, then resume afterwards.
+				inputPaneOpen = true;
+				stopSpeedFrameTimer();
 				try {
-					await adapters.saveConfig(nextConfig);
-				} catch {
-					ctx.ui.notify("pi-glance-tps configuration save failed; keeping previous configuration", "error");
-					return;
+					await handlePane(ctx);
+				} finally {
+					inputPaneOpen = false;
+					ensureSpeedFrameTimer();
 				}
-
-				config = nextConfig;
-				configWritable = true;
-				configDiagnostic = undefined;
-				configDiagnosticStatus = "loaded";
-				configDiagnosticNotified = false;
-				if (previousConfig.enabled && nextConfig.enabled) {
-					reconcileGitRefresher();
-					activeEditor?.refreshActivity();
-				}
-				await refreshSession.configSaved(
-					ctx,
-					previousConfig.enabled === nextConfig.enabled ? undefined : () => installInputSurface(ctx),
-				);
-				ctx.ui.notify("pi-glance-tps configuration saved", "info");
 			},
 		},
 		events: {
@@ -423,19 +445,23 @@ export function createGlanceTpsRuntime(adapters: GlanceTpsRuntimeAdapters): Glan
 			},
 			uiPromptStart: (_event, _ctx) => {
 				waitingForUi = true;
+				stopSpeedFrameTimer();
 				refreshSession.uiPromptStart();
 				activeEditor?.refreshActivity();
 			},
 			uiPromptEnd: (_event, _ctx) => {
 				waitingForUi = false;
+				ensureSpeedFrameTimer();
 				refreshSession.uiPromptEnd();
 				activeEditor?.refreshActivity();
 			},
 			messageStart: (_event, _ctx) => {
 				refreshSession.messageStart();
-				ensureSpeedFrameTimer();
+				if (!inputPaneOpen) ensureSpeedFrameTimer();
 			},
 			messageUpdate: (event, _ctx) => {
+				// While the pane covers the editor, keep the bottom line still.
+				if (inputPaneOpen) return;
 				refreshSession.messageUpdate(event.message);
 				ensureSpeedFrameTimer();
 			},
