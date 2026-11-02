@@ -35,7 +35,7 @@ for (const document of [readme, chineseReadme]) {
 	assert.ok(!document.includes("docs/adr"), "public READMEs must not link to ignored local ADRs");
 	assertIncludes(document, "CONTEXT.md", "both READMEs should link to the maintained design reference");
 
-	assertIncludes(document, "pi install ./pi-glance-tps", "both READMEs should document local installation");
+	assertIncludes(document, "pi install git:github.com/jixule/pi-glance-tps", "both READMEs should document git installation");
 	assertIncludes(document, "/glance-tps", "both READMEs should name the only settings command");
 	assertIncludes(document, INPUT_SURFACE_IMAGE, "both READMEs should show the input surface");
 	assertIncludes(document, SETTINGS_IMAGE, "both READMEs should show the settings pane");

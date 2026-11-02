@@ -18,13 +18,13 @@ Forked from [pi-glance](https://github.com/LinYS77/pi-glance). The live speed di
 
 ## Install
 
-From a local checkout (not published to npm):
+From GitHub (not published to npm):
 
 ```bash
-pi install ./pi-glance-tps
+pi install git:github.com/jixule/pi-glance-tps
 ```
 
-Restart Pi or run `/reload`.
+Pin a release with `@v0.1.0` when you want a fixed version. Restart Pi or run `/reload`.
 
 ## Features
 
@@ -73,8 +73,7 @@ Previews use example data.
 ## Update
 
 ```bash
-cd <checkout>
-git pull
+pi update git:github.com/jixule/pi-glance-tps
 ```
 
 ## Contributing

@@ -18,13 +18,13 @@ Fork 自 [pi-glance](https://github.com/LinYS77/pi-glance)。实时速度显示�
 
 ## 安装
 
-从本地仓库安装（尚未发布到 npm）：
+从 GitHub 安装（尚未发布到 npm）：
 
 ```bash
-pi install ./pi-glance-tps
+pi install git:github.com/jixule/pi-glance-tps
 ```
 
-重启 Pi，或执行 `/reload`。
+需要固定版本时加 `@v0.1.0`。重启 Pi，或执行 `/reload`。
 
 ## 功能
 
@@ -73,8 +73,7 @@ pi install ./pi-glance-tps
 ## 更新
 
 ```bash
-cd <仓库目录>
-git pull
+pi update git:github.com/jixule/pi-glance-tps
 ```
 
 ## 参与贡献
