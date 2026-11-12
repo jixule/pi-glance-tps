@@ -95,10 +95,11 @@ const appearance = [
 	choiceSetting(
 		"appearance.icons",
 		"图标",
-		"Nerd Font 需要兼容字体；图标显示异常时请选择 Plain。",
+		"Nerd Font 需要兼容字体；图标显示异常时请选择 Plain，选择不显示则只保留文字。",
 		[
 			{ value: "nerd", label: "Nerd Font" },
 			{ value: "plain", label: "Plain" },
+			{ value: "none", label: "不显示" },
 		],
 		(c) => c.icons,
 		(c, v) => {

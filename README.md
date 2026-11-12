@@ -62,7 +62,7 @@ Previews use example data.
 
 ## Notes
 
-- Nerd Font icons are enabled by default. For regular fonts, select `Plain` in `/glance-tps` → **Appearance** → **Icons**.
+- Nerd Font icons are enabled by default. For regular fonts, select `Plain` in `/glance-tps` → **Appearance** → **Icons**; select `不显示` to keep text only.
 - Activity defaults to **Text**. Choose **Sweep** under **Activity** for border effects.
 - Git **Summary** shows changed files and tracked `+ / −` lines. Local polling slows from 5 to 30 seconds while unchanged; activity brings refreshes forward. External edits are picked up by polling. **Auto fetch** checks upstream every 5 minutes; disable under **Status line → Git**.
 - Drafts persist per session until restored. `--no-session` keeps them in memory.

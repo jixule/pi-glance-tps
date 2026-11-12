@@ -17,7 +17,7 @@ import type {
 
 export const WORKING_SWEEP_COLOR_VALUES = ["theme", "amber", "rose", "violet", "blue", "teal", "mint", "coral", "copper"] as const satisfies readonly WorkingSweepColor[];
 export const WORKING_SWEEP_MODE_VALUES: ReadonlyArray<WorkingSweepMode> = ["top", "perimeter"];
-export const ICON_MODE_VALUES: ReadonlyArray<IconMode> = ["plain", "nerd"];
+export const ICON_MODE_VALUES: ReadonlyArray<IconMode> = ["plain", "nerd", "none"];
 export const PROVIDER_DISPLAY_MODE_VALUES: ReadonlyArray<GlanceTpsConfig["display"]["showProvider"]> = ["auto", "always", "never"];
 export const WORKSPACE_LABEL_MODE_VALUES: ReadonlyArray<WorkspaceLabelMode> = ["name", "smart", "path"];
 export const EDITOR_TOP_MARGIN_ROW_VALUES: ReadonlyArray<EditorTopMarginRows> = [0, 1, 2];

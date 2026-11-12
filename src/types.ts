@@ -10,7 +10,7 @@ export interface GlanceTpsThemePair {
 export type BuiltinSegmentId = "git" | "model" | "context" | "tokens" | "cost" | "throughput";
 export type SegmentId = BuiltinSegmentId | "extensions";
 export type ExtensionStatusSource = () => ReadonlyMap<string, string> | undefined;
-export type IconMode = "nerd" | "plain";
+export type IconMode = "nerd" | "plain" | "none";
 export type WidthMode = "full" | "compact" | "minimal";
 export type GitStatus = "clean" | "dirty" | "conflict" | "unknown";
 export type GitShaMode = "off" | "detached" | "always";

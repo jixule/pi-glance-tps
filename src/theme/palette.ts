@@ -5,7 +5,7 @@ export const PALETTES: Record<GlanceTpsThemeName, GlanceTpsPalette> = Object.fro
 	TACH_THEME_CATALOG.map((theme) => [theme.id, theme.palette]),
 ) as Record<GlanceTpsThemeName, GlanceTpsPalette>;
 
-export const DRAFT_LABELS: Record<IconMode, string> = { nerd: "", plain: "draft" };
+export const DRAFT_LABELS: Record<IconMode, string> = { nerd: "", plain: "draft", none: "draft" };
 
 export const ICONS: Record<IconMode, IconSet> = {
 	nerd: {
@@ -23,6 +23,14 @@ export const ICONS: Record<IconMode, IconSet> = {
 		tokens: "tok",
 		cost: "",
 		throughput: "spd",
+	},
+	none: {
+		git: "",
+		model: "",
+		context: "",
+		tokens: "",
+		cost: "",
+		throughput: "",
 	},
 };
 

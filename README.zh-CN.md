@@ -62,7 +62,7 @@ pi install git:github.com/jixule/pi-glance-tps
 
 ## 说明
 
-- 默认使用 Nerd Font 图标。使用普通字体时，可在 `/glance-tps` → **Appearance** → **Icons** 中选择 `Plain`。
+- 默认使用 Nerd Font 图标。使用普通字体时，可在 `/glance-tps` → **Appearance** → **Icons** 中选择 `Plain`；选择 `不显示` 则只保留文字。
 - 活动状态默认使用 **Text** 文字模式，可在 **Activity** 选择 **Sweep** 边框动效。
 - Git 默认使用 **Summary**，显示变更文件数和已跟踪内容的增删行数。无变化时，本地轮询从 5 秒逐步延长到 30 秒，工具等活动会提前刷新；外部编辑通过轮询发现。**Auto fetch** 每 5 分钟更新上游，可在 **Status line → Git** 关闭。
 - 草稿按会话保存在本机，重载后可取回，恢复后删除；`--no-session` 仅使用内存。

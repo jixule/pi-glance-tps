@@ -75,6 +75,12 @@ await test("enabled throughput full status should render final plain icon plus t
 	assert.equal(plain(state, config, 48), "spd 20/s", "enabled throughput minimal status should render final compact /s copy");
 });
 
+await test("icons none should drop every segment icon while keeping the values", async () => {
+	const config = setSegments({ ...defaultConfig(), icons: "none" }, [{ id: "throughput", enabled: true }]);
+	assert.equal(plain(withThroughput(testState(), sample), config, 120), "20 t/s", "none mode should render the value without an icon prefix");
+	assert.equal(plain(withThroughput(testState(), sample), config, 48), "20/s", "none mode should keep the compact copy without an icon prefix");
+});
+
 await test("currentRun should win over lastRun and render with a provisional ~ marker in full width", async () => {
 	const config = setSegments({ ...defaultConfig(), icons: "plain" }, [{ id: "throughput", enabled: true }]);
 	const current = turn(42);
