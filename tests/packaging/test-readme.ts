@@ -3,7 +3,9 @@ import { access, readFile } from "node:fs/promises";
 import { TACH_THEMES } from "../../src/theme/themes.js";
 
 const readme = await readFile("README.md", "utf8");
-const chineseReadme = await readFile("README.zh-CN.md", "utf8");
+// README.md is bilingual: the Simplified Chinese page first, the English page below it.
+const chineseReadme = readme;
+const chinesePointer = await readFile("README.zh-CN.md", "utf8");
 const manifest = JSON.parse(await readFile("package.json", "utf8")) as {
 	description?: string;
 	files?: string[];
@@ -17,19 +19,21 @@ const manifest = JSON.parse(await readFile("package.json", "utf8")) as {
 const INPUT_SURFACE_IMAGE = "./assets/input-surface.png";
 const SETTINGS_IMAGE = "./assets/settings.png";
 const THEMES_GIF = "./assets/themes.gif";
+const SURFACE_ACTIVITY_GIF = "./assets/surface-activity.gif";
+const LIVE_SPEED_GIF = "./assets/live-speed.gif";
 const GALLERY_GIF = "https://raw.githubusercontent.com/jixule/pi-glance-tps/main/assets/themes.gif";
 
 function assertIncludes(document: string, fragment: string, message: string): void {
 	assert.ok(document.includes(fragment), message);
 }
 
-assert.ok(readme.length < 4_000, "the English README should remain a concise product page");
-assert.ok(chineseReadme.length < 2_800, "the Chinese README should remain a concise product page");
+assert.ok(readme.length < 9_500, "the bilingual README should remain a concise product page");
+assert.ok(chinesePointer.length < 500, "the Chinese entry point should stay a short pointer");
 
 assert.match(readme, /rounded editor/i, "the English README should describe the editor");
 assertIncludes(readme, "README.zh-CN.md", "the English README should link to Simplified Chinese");
 assertIncludes(chineseReadme, "圆角编辑器", "the Chinese README should describe the editor");
-assertIncludes(chineseReadme, "README.md", "the Chinese README should link back to English");
+assertIncludes(chinesePointer, "README.md", "the Chinese entry point should link back to the bilingual README");
 
 for (const document of [readme, chineseReadme]) {
 	assert.ok(!document.includes("docs/adr"), "public READMEs must not link to ignored local ADRs");
@@ -40,6 +44,8 @@ for (const document of [readme, chineseReadme]) {
 	assertIncludes(document, INPUT_SURFACE_IMAGE, "both READMEs should show the input surface");
 	assertIncludes(document, SETTINGS_IMAGE, "both READMEs should show the settings pane");
 	assertIncludes(document, THEMES_GIF, "both READMEs should embed the animated theme preview");
+	assertIncludes(document, SURFACE_ACTIVITY_GIF, "both READMEs should embed the animated input surface");
+	assertIncludes(document, LIVE_SPEED_GIF, "both READMEs should embed the animated live speed preview");
 	assert.ok(!document.includes(".mp4"), "the READMEs should not reference the retired MP4 preview");
 	assert.ok(!document.includes("assets/demo.gif"), "the retired demo GIF must not return");
 	assert.ok(!document.includes("github.com/badlogic/pi-mono"), "README links should use the current Pi repository");
@@ -85,9 +91,17 @@ assert.deepEqual(manifest.pi?.extensions, ["./index.ts"], "the Pi extension entr
 assert.equal(manifest.pi?.image, GALLERY_GIF, "the Pi package gallery should use the animated GIF preview");
 assert.equal(manifest.pi?.video, undefined, "the Pi package manifest should not retain an MP4 preview");
 
-await Promise.all([access("assets/input-surface.png"), access("assets/settings.png"), access("assets/themes.gif")]);
-const themesGif = await readFile("assets/themes.gif");
-assert.equal(themesGif.subarray(0, 6).toString("ascii"), "GIF89a", "the theme preview should be a GIF89a animation");
-assert.ok(themesGif.byteLength < 5_000_000, "the animated theme preview should remain suitable for a README");
+await Promise.all([
+	access("assets/input-surface.png"),
+	access("assets/settings.png"),
+	access("assets/themes.gif"),
+	access("assets/surface-activity.gif"),
+	access("assets/live-speed.gif"),
+]);
+for (const asset of ["themes.gif", "surface-activity.gif", "live-speed.gif"]) {
+	const bytes = await readFile(`assets/${asset}`);
+	assert.equal(bytes.subarray(0, 6).toString("ascii"), "GIF89a", `${asset} should be a GIF89a animation`);
+	assert.ok(bytes.byteLength < 5_000_000, `${asset} should remain suitable for a README`);
+}
 
 console.log("✓ concise bilingual README and gallery metadata checks passed");
